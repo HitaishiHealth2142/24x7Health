@@ -1,39 +1,26 @@
-// db.js
+// db.js — 24x7health.in
+
 const mysql = require('mysql2');
 
-// Create the connection pool with VM details
-// const db = mysql.createPool({
-//   host: '34.14.183.204', 
-//   user: '24x7health',         
-//   password: 'Healthcare@2142',
-//   database: 'healthcare', 
-//   port: 3306,
-//   waitForConnections: true,
-//   connectionLimit: 10,
-//   queueLimit: 0
-// });
-
 const db = mysql.createPool({
-  host: 'localhost',          
-  user: 'root',           
-  password: '2142',
-  database: 'healthcare',
+  host: 'localhost',          // IMPORTANT
+  user: 'health24x7',
+  password: 'Health@2142',
+  database: 'healthcare_24x7',
   port: 3306,
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0
 });
 
-// Optional: Test the connection
+// Test connection
 db.getConnection((err, connection) => {
   if (err) {
     console.error('❌ DB connection error:', err);
     return;
   }
-  if (connection) {
-    console.log('✅ Database connected successfully (via pool)');
-    connection.release();
-  }
+  console.log('✅ 24x7Health DB connected');
+  connection.release();
 });
 
 module.exports = db;
