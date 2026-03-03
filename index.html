@@ -618,10 +618,78 @@
                 </div>
                 
                 <!-- Profile Icon -->
-                <a href="login.html" id="loginNav1" title="Login/Profile" class="social-link" style="margin-left: 10px;">
-                    <i class="fas fa-user-circle"></i>
-                    <span id="userName1"></span>
-                </a>
+                <div style="position: relative; display: inline-block; margin-left: 10px;">
+
+                    <!-- User Icon -->
+                    <div onclick="toggleDropdown()" 
+                        style="cursor:pointer; display:flex; align-items:center; gap:5px;">
+                        <i class="fas fa-user-circle" style="font-size:22px;"></i>
+                        <span id="userName1"></span>
+                        <i class="fas fa-caret-down" style="font-size:12px;"></i>
+                    </div>
+
+                    <!-- Dropdown Menu -->
+                    <div id="userDropdown" 
+                        style="
+                            display:none;
+                            position:absolute;
+                            right:0;
+                            top:35px;
+                            background:#ffffff;
+                            min-width:200px;
+                            border-radius:8px;
+                            box-shadow:0 8px 20px rgba(0,0,0,0.15);
+                            padding:8px 0;
+                            z-index:9999;
+                        ">
+
+                        <a href="login.html" 
+                        style="display:block; padding:10px 15px; text-decoration:none; color:#333; font-size:14px;"
+                        onmouseover="this.style.background='#f3f4f6'" 
+                        onmouseout="this.style.background='white'">
+                        🔐 Unified Login
+                        </a>
+
+                        <a href="doctor.html" 
+                        style="display:block; padding:10px 15px; text-decoration:none; color:#333; font-size:14px;"
+                        onmouseover="this.style.background='#f3f4f6'" 
+                        onmouseout="this.style.background='white'">
+                        🩺 Doctor Register
+                        </a>
+
+                        <a href="diagnosticRegistration.html" 
+                        style="display:block; padding:10px 15px; text-decoration:none; color:#333; font-size:14px;"
+                        onmouseover="this.style.background='#f3f4f6'" 
+                        onmouseout="this.style.background='white'">
+                        🧪 Diagnostic Register
+                        </a>
+
+                        <a href="AdminLogin.html" 
+                        style="display:block; padding:10px 15px; text-decoration:none; color:#333; font-size:14px;"
+                        onmouseover="this.style.background='#f3f4f6'" 
+                        onmouseout="this.style.background='white'">
+                        🔑 Admin Login
+                        </a>
+
+                    </div>
+                </div>
+
+                <script>
+                    function toggleDropdown() {
+                        const dropdown = document.getElementById("userDropdown");
+                        dropdown.style.display = 
+                            dropdown.style.display === "block" ? "none" : "block";
+                    }
+
+                    // Close dropdown when clicking outside
+                    window.addEventListener("click", function(e) {
+                        const dropdown = document.getElementById("userDropdown");
+                        if (!e.target.closest('#userDropdown') && 
+                            !e.target.closest('[onclick="toggleDropdown()"]')) {
+                            dropdown.style.display = "none";
+                        }
+                    });
+                </script>
             </div>
         </div>
 
