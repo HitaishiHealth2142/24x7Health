@@ -1176,10 +1176,133 @@
                 </div>
                 
                 <!-- Profile Icon -->
-                <a href="login.html" id="loginNav1" title="Login/Profile" class="social-link" style="margin-left: 10px;">
-                    <i class="fas fa-user-circle"></i>
-                    <span id="userName1"></span>
-                </a>
+                <div style="position: relative; display: inline-block; margin-left: 10px;">
+
+                    <!-- User Icon -->
+                    <div onclick="toggleDropdown()" 
+                        style="cursor:pointer; display:flex; align-items:center; gap:5px; color:white;">
+                        <i class="fas fa-user-circle" style="font-size:22px;"></i>
+                        <span id="userName1" style="font-size:14px;"></span>
+                        <i class="fas fa-caret-down" style="font-size:12px;"></i>
+                    </div>
+
+                    <!-- Dropdown Menu -->
+                    <div id="userDropdown" 
+                        style="
+                            display:none;
+                            position:absolute;
+                            right:0;
+                            top:35px;
+                            background:#ffffff;
+                            min-width:220px;
+                            border-radius:8px;
+                            box-shadow:0 8px 20px rgba(0,0,0,0.15);
+                            padding:8px 0;
+                            z-index:9999;
+                        ">
+
+                        <!-- Login / Register Links -->
+                        <a href="login.html"
+                            style="display:block; padding:10px 15px; text-decoration:none; color:#333; font-size:14px;"
+                            onmouseover="this.style.background='#f3f4f6'"
+                            onmouseout="this.style.background='white'">
+                            🔐 Unified Login
+                        </a>
+
+                        <a href="doctor.html"
+                            style="display:block; padding:10px 15px; text-decoration:none; color:#333; font-size:14px;"
+                            onmouseover="this.style.background='#f3f4f6'"
+                            onmouseout="this.style.background='white'">
+                            🩺 Doctor Register
+                        </a>
+
+                        <a href="diagnosticRegistration.html"
+                            style="display:block; padding:10px 15px; text-decoration:none; color:#333; font-size:14px;"
+                            onmouseover="this.style.background='#f3f4f6'"
+                            onmouseout="this.style.background='white'">
+                            🧪 Diagnostic Register
+                        </a>
+
+                        <a href="AdminLogin.html"
+                            style="display:block; padding:10px 15px; text-decoration:none; color:#333; font-size:14px;"
+                            onmouseover="this.style.background='#f3f4f6'"
+                            onmouseout="this.style.background='white'">
+                            🔑 Admin Login
+                        </a>
+
+                        <!-- Divider -->
+                        <div style="height:1px; background:#e5e7eb; margin:6px 0;"></div>
+
+                        <!-- Logout -->
+                        <div id="logoutBtn"
+                            style="display:none; padding:10px 15px; font-size:14px; color:#dc2626; cursor:pointer;"
+                            onmouseover="this.style.background='#fee2e2'"
+                            onmouseout="this.style.background='white'">
+                            🚪 Logout
+                        </div>
+
+                    </div>
+                </div>
+
+                <script>
+                    function toggleDropdown() {
+                        const dropdown = document.getElementById("userDropdown");
+                        dropdown.style.display =
+                            dropdown.style.display === "block" ? "none" : "block";
+                    }
+
+                    // Close dropdown outside click
+                    window.addEventListener("click", function(e) {
+                        if (!e.target.closest('#userDropdown') &&
+                            !e.target.closest('[onclick="toggleDropdown()"]')) {
+                            document.getElementById("userDropdown").style.display = "none";
+                        }
+                    });
+
+                    /* =========================
+                    USER LOGIN CHECK
+                    ========================= */
+
+                    document.addEventListener("DOMContentLoaded", function () {
+
+                        const userNameSpan = document.getElementById("userName1");
+                        const logoutBtn = document.getElementById("logoutBtn");
+
+                        const patientName = localStorage.getItem("fullName");
+                        const doctorName = localStorage.getItem("doctorName");
+                        const diagnosticName = localStorage.getItem("diagnosticName");
+                        const adminToken = localStorage.getItem("adminToken");
+
+                        let currentUser = patientName || doctorName || diagnosticName;
+
+                        if (adminToken) {
+                            currentUser = "Admin";
+                        }
+
+                        if (currentUser) {
+                            userNameSpan.textContent = currentUser;
+                            logoutBtn.style.display = "block";
+                        } else {
+                            userNameSpan.textContent = "";
+                            logoutBtn.style.display = "none";
+                        }
+
+                        /* Logout Function */
+                        logoutBtn.addEventListener("click", function () {
+
+                            // Clear all possible login data
+                            localStorage.removeItem("fullName");
+                            localStorage.removeItem("doctorName");
+                            localStorage.removeItem("diagnosticName");
+                            localStorage.removeItem("adminToken");
+                            localStorage.removeItem("uid");
+                            sessionStorage.clear();
+
+                            window.location.href = "index.html";
+                        });
+
+                    });
+                </script>
             </div>
         </div>
 
