@@ -36,7 +36,7 @@ const createDoctorsTable = `
   uid VARCHAR(10) UNIQUE,
   first_name VARCHAR(100),
   last_name VARCHAR(100),
-  email VARCHAR(100),
+  email VARCHAR(100) UNIQUE,
   mobile VARCHAR(20),
 
   door_no VARCHAR(100),
