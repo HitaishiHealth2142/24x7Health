@@ -807,7 +807,10 @@
           return;
         }
 
-        const res = await fetch(`${API_BASE}/session/status`);
+        const res = await fetch(`${API_BASE}/session/status`, {
+          method: "GET",
+          credentials: "include"
+        });
         if (!res.ok) {
           logout();
           return;
@@ -902,7 +905,9 @@
         return;
       }
 
-      fetch(`${API_BASE}/diagnostics/${centerId}/stats`)
+      fetch(`${API_BASE}/diagnostics/${centerId}/stats`, {
+        credentials: "include"
+      })
         .then(response => response.json())
         .then(data => {
           if (data.success && data.stats) {
@@ -1015,7 +1020,9 @@
             return;
           }
 
-          fetch(`${API_BASE}/test/center/${diagnosticCenterId}`)
+          fetch(`${API_BASE}/test/center/${diagnosticCenterId}`, {
+            credentials: "include"
+          })
             .then(response => response.json())
             .then(data => {
               const tbody = document.getElementById('ourTestsTableBody');
@@ -1226,6 +1233,7 @@
       
       fetch(`${API_BASE}/diagnostics/${centerId}`, {
         method: 'PUT',
+        credentials: "include",
         body: formData
       })
       .then(response => response.json())
@@ -1281,6 +1289,8 @@
         console.error("Server logout failed, but proceeding with client-side cleanup:", error);
       } finally {
         localStorage.clear();
+        // stay for 5 seconds
+        
         window.location.href = 'login.html';
       }
     }  
