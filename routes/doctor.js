@@ -45,7 +45,6 @@ const createDoctorsTable = `
   state VARCHAR(100),
   country VARCHAR(100),
   zipcode VARCHAR(20),
-
   clinic VARCHAR(255),
   license_number VARCHAR(100),
   aadhar_card VARCHAR(20) UNIQUE,

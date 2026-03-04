@@ -23,9 +23,9 @@ router.post("/unified-login", (req, res) => {
 
         req.session.isAuthenticated = true;
         req.session.user = {
-          type: 'diagnostic',
-          id: user.id,
-          center_id: user.center_id, // <-- This is the crucial addition
+          type: "diagnostic",
+          id: user.center_id,
+          center_id: user.center_id,
           name: user.center_name,
           email: user.email
         };
