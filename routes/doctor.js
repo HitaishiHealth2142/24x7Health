@@ -38,7 +38,7 @@ const createDoctorsTable = `
   last_name VARCHAR(100),
   email VARCHAR(100) UNIQUE,
   mobile VARCHAR(20),
-
+  wallet_balance INT DEFAULT 0,
   door_no VARCHAR(100),
   area VARCHAR(150),
   city VARCHAR(100),

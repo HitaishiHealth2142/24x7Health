@@ -803,9 +803,52 @@
         </form>
       </div>
 
-      <!-- wallet transaction section -->
-      <div id="wallet" class="section" style="display: none;">
-        <h1>wallet section</h1>
+      <!-- Wallet Section -->
+      <div id="wallet" class="section" style="display:none;">
+
+        <div class="page-header">
+          <h1>Doctor Wallet</h1>
+          <p>Your earnings from completed consultations</p>
+        </div>
+
+        <!-- Wallet Balance -->
+        <div style="background:#E6F4EA;padding:20px;border-radius:10px;margin-bottom:25px;">
+            <h3 style="color:#28A745;margin-bottom:5px;">Total Wallet Balance</h3>
+            <h2 style="font-size:36px;font-weight:700;color:#28A745;">
+              ₹<span id="doctorWallet">0</span>
+            </h2>
+        </div>
+
+        <!-- Wallet Transactions Table -->
+        <div class="table-container">
+          <div class="table-header">
+            <h3 class="table-title">Earnings History</h3>
+          </div>
+
+          <table>
+            <thead>
+              <tr>
+                <th>Appointment ID</th>
+                <th>Patient Name</th>
+                <th>Patient Email</th>
+                <th>Date</th>
+                <th>Time</th>
+                <th>Payment ID</th>
+                <th>Amount</th>
+              </tr>
+            </thead>
+
+            <tbody id="walletTableBody">
+              <tr>
+                <td colspan="7" style="text-align:center;padding:20px;">
+                  Loading wallet transactions...
+                </td>
+              </tr>
+            </tbody>
+
+          </table>
+        </div>
+
       </div>
     </div>
   </div>
@@ -825,7 +868,7 @@
 
     function showLoading(isLoading) {
       document.getElementById('loadingIndicator').style.display = isLoading ? 'block' : 'none';
-      const sections = ['dashboard', 'appointments', 'history', 'update'];
+      const sections = ['dashboard', 'appointments', 'history', 'update' , 'wallet'];
       sections.forEach(id => {
           const el = document.getElementById(id);
           if (el) el.style.display = isLoading ? 'none' : el.style.display;
@@ -843,6 +886,7 @@
       // Dynamically load data when a section is shown
       if (sectionId === 'appointments') loadAppointments();
       if (sectionId === 'history') loadHistory();
+      if(sectionId === "wallet"){loadDoctorWallet();}
     }
     
     function populateProfileData(doctor) {
@@ -1004,13 +1048,69 @@
       }
     }
 
-    function logout() {
-      localStorage.clear();
-      fetch(`${API_BASE}/logout`, { method: "POST" })
-        .finally(() => {
-          window.location.href = "login.html";
+    async function loadDoctorWallet() {
+
+      try {
+
+        const res = await fetch(`${API_BASE}/doctor/wallet/${doctorUid}`);
+        const data = await res.json();
+
+        document.getElementById("doctorWallet").innerText = data.wallet || 0;
+
+        const table = document.getElementById("walletTableBody");
+        table.innerHTML = "";
+
+        if(!data.transactions || data.transactions.length === 0){
+            table.innerHTML =
+            `<tr>
+              <td colspan="7" style="text-align:center;padding:20px;">
+              No earnings yet
+              </td>
+            </tr>`;
+            return;
+        }
+
+        data.transactions.forEach(tx => {
+
+            const row = `
+            <tr>
+
+              <td>${tx.appointment_uid}</td>
+
+              <td>${tx.patient_name}</td>
+
+              <td>${tx.patient_email}</td>
+
+              <td>${new Date(tx.appointment_date).toLocaleDateString()}</td>
+
+              <td>${tx.appointment_time}</td>
+
+              <td>${tx.payment_id}</td>
+
+              <td style="color:#28A745;font-weight:600;">₹${tx.amount}</td>
+
+            </tr>
+            `;
+
+            table.innerHTML += row;
+
         });
-    }
+
+      } catch(err) {
+
+        console.error("Wallet loading error:", err);
+
+      }
+
+    }  
+
+    function logout() {
+          localStorage.clear();
+          fetch(`${API_BASE}/logout`, { method: "POST" })
+            .finally(() => {
+              window.location.href = "login.html";
+            });
+        }
 
     document.getElementById("updateForm").addEventListener("submit", async function (e) {
       e.preventDefault();

@@ -421,24 +421,91 @@ router.get("/admin/appointments", (req, res) => {
 router.put("/admin/process/:appointmentId", (req, res) => {
   const appointmentId = req.params.appointmentId;
 
-  const query = `
-    UPDATE wallet_transactions
-    SET 
-      admin_payment_amount = 50,
-      doctor_payment_amount = 300,
-      processed = TRUE,
-      processed_at = NOW()
-    WHERE appointment_id = ?
+  // 1️⃣ Get doctor UID
+  const doctorQuery = `
+    SELECT doctor_uid 
+    FROM appointments 
+    WHERE id = ?
   `;
 
-  db.query(query, [appointmentId], (err, result) => {
+  db.query(doctorQuery, [appointmentId], (err, result) => {
     if (err) {
-      console.error("Process payment error:", err);
-      return res.status(500).json({ message: "Processing failed" });
+      console.error("Error fetching doctor:", err);
+      return res.status(500).json({ message: "DB error" });
     }
 
-    res.json({ success: true });
+    if (result.length === 0) {
+      return res.status(404).json({ message: "Appointment not found" });
+    }
+
+    const doctorUid = result[0].doctor_uid;
+
+    // 2️⃣ Update wallet_transactions
+    const processQuery = `
+      UPDATE wallet_transactions
+      SET 
+        admin_payment_amount = 50,
+        doctor_payment_amount = 300,
+        processed = TRUE,
+        processed_at = NOW()
+      WHERE appointment_id = ?
+    `;
+
+    db.query(processQuery, [appointmentId], (err2) => {
+      if (err2) {
+        console.error("Process payment error:", err2);
+        return res.status(500).json({ message: "Processing failed" });
+      }
+
+      // 3️⃣ Add money to doctor wallet
+      const doctorWalletQuery = `
+        UPDATE doctors
+        SET wallet_balance = wallet_balance + 300
+        WHERE uid = ?
+      `;
+
+      db.query(doctorWalletQuery, [doctorUid], (err3) => {
+        if (err3) {
+          console.error("Doctor wallet update error:", err3);
+          return res.status(500).json({ message: "Doctor wallet update failed" });
+        }
+
+        res.json({
+          success: true,
+          message: "Settlement completed successfully"
+        });
+      });
+    });
   });
+});
+
+// ================= Doctor Wallet ===================
+router.get("/doctor/wallet/:doctorUid", (req, res) => {
+
+  const doctorUid = req.params.doctorUid;
+
+  const query = `
+    SELECT wallet_balance 
+    FROM doctors 
+    WHERE uid = ?
+  `;
+
+  db.query(query, [doctorUid], (err, result) => {
+
+    if (err) {
+      return res.status(500).json({ message: "DB error" });
+    }
+
+    if (result.length === 0) {
+      return res.status(404).json({ message: "Doctor not found" });
+    }
+
+    res.json({
+      wallet: result[0].wallet_balance
+    });
+
+  });
+
 });
 
 // ================= ADMIN WALLET TOTAL =================
