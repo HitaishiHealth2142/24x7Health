@@ -1481,6 +1481,7 @@ services from trusted labs near your location. </p>
                 Clear filters
                 </button>
             </div>
+            <div id="area-filters" class="mb-6 flex flex-wrap gap-2"></div>
             <div id="results-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 overflow-y-auto max-h-[80vh]"></div>
             </div>
         </div>
@@ -1549,12 +1550,13 @@ services from trusted labs near your location. </p>
                         const diagnosticsData = await diagnosticsRes.json();
                         
                         const doctors = (Array.isArray(doctorsData) ? doctorsData : []).map(d => ({
-
                             id: d.uid,
                             type: 'doctor',
                             name: `Dr. ${d.first_name} ${d.last_name}`,
                             specialization: d.specialization,
                             clinic: d.clinic,
+
+                            area: d.area,
 
                             // ✅ Build full address properly
                             address: `${d.door_no}, ${d.area}, ${d.city}, ${d.state}, ${d.country} - ${d.zipcode}`,
@@ -1694,6 +1696,47 @@ services from trusted labs near your location. </p>
                     }
                 };
 
+                const renderAreaButtons = (providers) => {
+
+                    const areaContainer = document.getElementById("area-filters");
+                    areaContainer.innerHTML = "";
+
+                    // Only doctors
+                    const doctorAreas = providers
+                        .filter(p => p.type === "doctor" && p.area)
+                        .map(p => p.area);
+
+                    const uniqueAreas = [...new Set(doctorAreas)];
+
+                    if (uniqueAreas.length === 0) return;
+
+                    uniqueAreas.forEach(area => {
+
+                        const btn = document.createElement("button");
+
+                        btn.textContent = area;
+
+                        btn.className =
+                            "px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm hover:bg-blue-600 hover:text-white transition";
+
+                        btn.onclick = () => filterByArea(area);
+
+                        areaContainer.appendChild(btn);
+                    });
+                };
+                
+                const filterByArea = (area) => {
+
+                    const filtered = displayedProviders.filter(p =>
+                        p.type === "doctor" && p.area === area
+                    );
+
+                    resultsContainer.innerHTML = "";
+                    offset = 0;
+
+                    displayProvidersBatch(filtered.slice(0, BATCH_SIZE));
+                };               
+                                
                 const displayProvidersBatch = (providers) => {
                     resultsSection.classList.remove('hidden');
                     
@@ -1807,8 +1850,9 @@ services from trusted labs near your location. </p>
 
                     displayedProviders = filtered;
                     offset = 0;
+                    
                     resultsContainer.innerHTML = '';
-
+                    renderAreaButtons(filtered);
                     displayProvidersBatch(displayedProviders.slice(0, BATCH_SIZE));
                 };
 
