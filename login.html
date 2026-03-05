@@ -1632,11 +1632,11 @@
           message.classList.add('text-success', 'show');
           message.textContent = "Login successful! Redirecting...";
           
-          // Store necessary info in localStorage and redirect
-          if (data.role === "doctor") {
-            localStorage.setItem("doctorUid", data.user.uid);
-            localStorage.setItem("doctorName", data.user.first_name);
-            window.location.href = "doctorProfile.html";
+            // Store necessary info in localStorage and redirect
+            if (data.role === "doctor") {
+                localStorage.setItem("doctorUid", data.user.uid);
+                localStorage.setItem("doctorName", data.user.first_name);
+                window.location.href = "doctorProfile.html";
             } else if (data.role === "patient") {
                 // --- For Local Storage (Long-term memory) ---
                 // You can keep this if you need to remember the user ID for other parts of your site.
@@ -1662,13 +1662,22 @@
                 // 3. Redirect to the correct page.
                 window.location.href = 'index.html';
         
-          } else if (data.role === "diagnostic") {
-            localStorage.removeItem("diagnosticId"); 
-            localStorage.removeItem("diagnosticCenterId"); 
-            localStorage.setItem("diagnosticCenterId", data.user.center_id);
-            localStorage.setItem("diagnosticName", data.user.center_name);
-            window.location.href = "diagnosticProfile.html";
-          }
+            } else if (data.role === "diagnostic") {
+
+                // Clear old values
+                localStorage.removeItem("diagnosticId");
+                localStorage.removeItem("diagnosticCenterId");
+                console.log("LOGIN RESPONSE:", data);
+                console.log("CENTER ID:", data.user.center_id);
+
+                // Save correct values
+                localStorage.setItem("diagnosticCenterId", data.user.center_id);
+                console.log("Stored:", localStorage.getItem("diagnosticCenterId"));
+                localStorage.setItem("diagnosticName", data.user.center_name);
+
+                // Redirect
+                window.location.href = "diagnosticProfile.html";
+            }
         } else {
           message.classList.add('text-danger', 'show');
           message.textContent = data.error || "Login failed";
