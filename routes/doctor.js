@@ -283,6 +283,100 @@ router.get("/getdoctors", (req, res) => {
     });
 });
 
+// Get all countries
+router.get("/doctor-countries", (req, res) => {
+
+  const sql = `
+    SELECT DISTINCT country
+    FROM doctors
+    WHERE country IS NOT NULL
+    ORDER BY country
+  `;
+
+  db.query(sql, (err, results) => {
+
+    if (err) {
+      console.error("Country query error:", err);
+      return res.status(500).json({ error: "Database error" });
+    }
+
+    res.json(results);
+
+  });
+
+});
+
+// Get states by country
+router.get("/doctor-states", (req, res) => {
+
+  const { country } = req.query;
+
+  let sql = `
+    SELECT DISTINCT state
+    FROM doctors
+    WHERE 1=1
+  `;
+
+  const params = [];
+
+  if (country) {
+    sql += " AND country = ?";
+    params.push(country);
+  }
+
+  sql += " ORDER BY state";
+
+  db.query(sql, params, (err, results) => {
+
+    if (err) {
+      console.error("State query error:", err);
+      return res.status(500).json({ error: "Database error" });
+    }
+
+    res.json(results);
+
+  });
+
+});
+
+// Get zipcodes by state
+router.get("/doctor-zipcodes", (req, res) => {
+
+  const { country, state } = req.query;
+
+  let sql = `
+    SELECT DISTINCT zipcode
+    FROM doctors
+    WHERE 1=1
+  `;
+
+  const params = [];
+
+  if (country) {
+    sql += " AND country = ?";
+    params.push(country);
+  }
+
+  if (state) {
+    sql += " AND state = ?";
+    params.push(state);
+  }
+
+  sql += " ORDER BY zipcode";
+
+  db.query(sql, params, (err, results) => {
+
+    if (err) {
+      console.error("Zipcode query error:", err);
+      return res.status(500).json({ error: "Database error" });
+    }
+
+    res.json(results);
+
+  });
+
+});
+
 // Get Doctor Areas with Count (merged - includes filters for country, state, zipcode)
 router.get("/doctor-areas", (req, res) => {
 
