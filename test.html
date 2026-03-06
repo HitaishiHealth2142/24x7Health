@@ -122,6 +122,15 @@
             const loadingSection = document.getElementById('loading');
             const clearFiltersBtn = document.getElementById('clear-filters');
 
+            providerTypeSelect.addEventListener("change", () => {
+
+                countrySelect.innerHTML = '<option value="">Select Country</option>';
+                stateSelect.innerHTML = '<option value="">Select State</option>';
+
+                loadCountries();
+
+            });
+
             countrySelect.addEventListener("change", () => {
                 const country = countrySelect.value;
                 if (country) {
@@ -150,25 +159,79 @@
             };
 
             const loadCountries = async () => {
-                const res = await fetch("https://www.24x7health.in/api/doctor-countries");
-                const countries = await res.json();
+
+                const providerType = providerTypeSelect.value;
+
+                let countries = [];
+
+                if (providerType === "doctor") {
+
+                    const res = await fetch("/api/doctor-countries");
+                    countries = await res.json();
+
+                } else if (providerType === "diagnostic") {
+
+                    const res = await fetch("/api/diagnostic-countries");
+                    countries = await res.json();
+
+                } else {
+
+                    const doctorRes = await fetch("/api/doctor-countries");
+                    const doctorCountries = await doctorRes.json();
+
+                    const diagRes = await fetch("/api/diagnostic-countries");
+                    const diagCountries = await diagRes.json();
+
+                    countries = [...doctorCountries, ...diagCountries];
+                }
+
                 countrySelect.innerHTML = '<option value="">Select Country</option>';
-                countries.forEach(c => {
-                    const option = new Option(c.country, c.country);
+
+                const unique = [...new Set(countries.map(c => c.country))];
+
+                unique.forEach(country => {
+                    const option = new Option(country, country);
                     countrySelect.add(option);
                 });
             };
-
+            
             const loadStates = async (country) => {
-                const res = await fetch(`https://www.24x7health.in/api/doctor-states?country=${country}`);
-                const states = await res.json();
+
+                const providerType = providerTypeSelect.value;
+
+                let states = [];
+
+                if (providerType === "doctor") {
+
+                    const res = await fetch(`/api/doctor-states?country=${country}`);
+                    states = await res.json();
+
+                } else if (providerType === "diagnostic") {
+
+                    const res = await fetch(`/api/diagnostic-states?country=${country}`);
+                    states = await res.json();
+
+                } else {
+
+                    const doctorRes = await fetch(`/api/doctor-states?country=${country}`);
+                    const doctorStates = await doctorRes.json();
+
+                    const diagRes = await fetch(`/api/diagnostic-states?country=${country}`);
+                    const diagStates = await diagRes.json();
+
+                    states = [...doctorStates, ...diagStates];
+                }
+
                 stateSelect.innerHTML = '<option value="">Select State</option>';
-                states.forEach(s => {
-                    const option = new Option(s.state, s.state);
+
+                const unique = [...new Set(states.map(s => s.state))];
+
+                unique.forEach(state => {
+                    const option = new Option(state, state);
                     stateSelect.add(option);
                 });
             };
-
+            
             const fetchAndAppendProviders = async () => {
                 if (isLoading || offset >= displayedProviders.length) return;
                 isLoading = true;
@@ -227,15 +290,30 @@
 
                     btn.textContent = `${a.area} (${a.count})`;
 
-                    btn.className = "px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm hover:bg-blue-600 hover:text-white transition";
+                    btn.className = "px-3 py-1 rounded-full text-sm transition";
+
+                    if (selectedArea === a.area) {
+
+                        btn.classList.add("bg-blue-600", "text-white");
+
+                    } else {
+
+                        btn.classList.add(
+                            "bg-blue-100",
+                            "text-blue-700",
+                            "hover:bg-blue-600",
+                            "hover:text-white"
+                        );
+
+                    }
 
                     btn.onclick = () => filterByArea(a.area);
 
                     areaContainer.appendChild(btn);
 
                 });
-
             };
+            
             
             const filterByArea = async (area) => {
 
@@ -286,6 +364,7 @@
                 resultsContainer.innerHTML = "";
 
                 displayProvidersBatch(displayedProviders.slice(0, BATCH_SIZE));
+                await loadAreaButtons();
 
             };
                         
