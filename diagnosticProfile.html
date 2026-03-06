@@ -531,7 +531,7 @@
           <div class="row">
             <div class="col-md-6 mb-3">
               <label class="form-label">Center Name / ID</label>
-              <input type="text" class="form-control" name="center_id" required>
+              <input type="hidden" name="center_id" id="center_id">
             </div>
             <div class="col-md-6 mb-3">
               <label class="form-label">Status</label>
@@ -976,7 +976,8 @@
         e.preventDefault();
         const form = e.target;
         const formData = new FormData(form);
-        const diagnosticId = localStorage.getItem('diagnosticId'); // This might be needed for other purposes
+        // const diagnosticId = localStorage.getItem('diagnosticId'); // This might be needed for other purposes
+        const diagnosticId = localStorage.getItem('diagnosticCenterId');
 
         document.querySelector("input[name='price']").addEventListener("input", calculateFinalPrice);
         document.querySelector("input[name='discount']").addEventListener("input", calculateFinalPrice);
@@ -989,8 +990,10 @@
         }
 
         if (diagnosticId) {
-          formData.append('diagnostic_id', diagnosticId);
+          formData.append('center_id', diagnosticId);
         }
+        
+        formData.set("center_id", diagnosticId);
 
         fetch(`${API_BASE}/test/register`, {
           method: 'POST',
