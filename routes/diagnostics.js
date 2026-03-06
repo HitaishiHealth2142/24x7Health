@@ -43,6 +43,7 @@ CREATE TABLE IF NOT EXISTS diagnostic_centers (
   city VARCHAR(100),
   state VARCHAR(100),
   country VARCHAR(100),
+  area VARCHAR(100),
   pincode VARCHAR(10),
   map_url TEXT,
   registration_number VARCHAR(100),
