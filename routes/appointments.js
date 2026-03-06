@@ -256,11 +256,12 @@ router.get("/appointments/patient/:patientId", (req, res) => {
       appointment_uid VARCHAR(50),
       doctor_uid VARCHAR(20),
       type VARCHAR(50),
-      amount INT,
+      amount DECIMAL(10,2),
       description TEXT,
-      admin_payment_amount INT DEFAULT 0,
-      doctor_payment_amount INT DEFAULT 0,
+      admin_payment_amount DECIMAL(10,2) DEFAULT 0,
+      doctor_payment_amount DECIMAL(10,2) DEFAULT 0,
       transaction_ref VARCHAR(100),
+      admin_status VARCHAR(20) DEFAULT 'Pending',
       processed BOOLEAN DEFAULT FALSE,
       processed_at TIMESTAMP NULL,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -322,10 +323,20 @@ router.post("/payment/simulate", (req, res) => {
       });
     }
 
-    // 2️⃣ Insert wallet entry (NO appointmentUid variable used)
+    // 2️⃣ Insert wallet entry
     const walletQuery = `
       INSERT INTO wallet_transactions
-      (appointment_id, appointment_uid, doctor_uid, type, amount, description, transaction_ref)
+      (
+        appointment_id,
+        appointment_uid,
+        doctor_uid,
+        type,
+        amount,
+        description,
+        transaction_ref,
+        admin_status,
+        processed
+      )
       VALUES (
         ?,
         (SELECT appointment_uid FROM appointments WHERE id=?),
@@ -333,7 +344,9 @@ router.post("/payment/simulate", (req, res) => {
         'CREDIT_ADMIN',
         350,
         'Patient appointment payment',
-        ?
+        ?,
+        'Pending',
+        FALSE
       )
     `;
 
@@ -353,7 +366,6 @@ router.post("/payment/simulate", (req, res) => {
     });
   });
 });
-
 
 // Admin: fetch wallet transactions
 router.get('/admin/wallet', (req, res) => {
@@ -446,6 +458,7 @@ router.put("/admin/process/:appointmentId", (req, res) => {
       SET 
         admin_payment_amount = 50,
         doctor_payment_amount = 300,
+        admin_status = 'Processed',
         processed = TRUE,
         processed_at = NOW()
       WHERE appointment_id = ?
@@ -479,32 +492,50 @@ router.put("/admin/process/:appointmentId", (req, res) => {
   });
 });
 
-// ================= Doctor Wallet ===================
-router.get("/doctor/wallet/:doctorUid", (req, res) => {
+// ================= DOCTOR WALLET =================
+router.get("/doctor/wallet/:uid", async (req, res) => {
 
-  const doctorUid = req.params.doctorUid;
+  const { uid } = req.params;
 
-  const query = `
-    SELECT wallet_balance 
-    FROM doctors 
-    WHERE uid = ?
-  `;
+  try {
 
-  db.query(query, [doctorUid], (err, result) => {
+      const sql = `
+        SELECT 
+          a.appointment_uid,
+          a.patient_name,
+          a.patient_email,
+          a.appointment_date,
+          a.appointment_time,
+          w.transaction_ref AS payment_id,
+          w.doctor_payment_amount AS amount,
+          w.admin_status
+        FROM wallet_transactions w
+        JOIN appointments a 
+          ON w.appointment_id = a.id
+        WHERE a.doctor_uid = ?
+        ORDER BY w.created_at DESC
+      `;
 
-    if (err) {
-      return res.status(500).json({ message: "DB error" });
-    }
+    const [rows] = await db.promise().query(sql, [uid]);
 
-    if (result.length === 0) {
-      return res.status(404).json({ message: "Doctor not found" });
-    }
+    // wallet total
+    const total = rows.reduce((sum, tx) => sum + Number(tx.amount), 0);
 
     res.json({
-      wallet: result[0].wallet_balance
+      wallet: total,
+      transactions: rows
     });
 
-  });
+  } catch (err) {
+
+    console.error("Doctor wallet error:", err);
+
+    res.status(500).json({
+      wallet: 0,
+      transactions: []
+    });
+
+  }
 
 });
 
@@ -543,12 +574,12 @@ router.put('/appointments/complete/:id', (req, res) => {
     // Pay doctor ₹300
     const walletQuery = `
       INSERT INTO wallet_transactions 
-      (appointment_id, appointment_uid, doctor_id, type, amount, description)
-      VALUES (?, (SELECT appointment_uid FROM appointments WHERE id=?), (SELECT doctor_id FROM appointments WHERE id=?),
+      (appointment_id, appointment_uid, doctor_uid, type, amount, description)
+      VALUES (?, (SELECT appointment_uid FROM appointments WHERE id=?), (SELECT doctor_uid FROM appointments WHERE id=?),
               'DEBIT_DOCTOR', 300, 'Doctor payout after completion')
     `;
 
-    db.query(walletQuery, [appointmentId, appointmentId], (werr) => {
+    db.query(walletQuery, [appointmentId, appointmentId, appointmentId], (werr) => {
       if (werr) {
         console.error('DB error inserting wallet transaction', werr);
         return res.status(500).json({ message: 'Error inserting wallet transaction' });
