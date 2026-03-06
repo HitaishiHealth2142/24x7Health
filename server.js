@@ -148,10 +148,12 @@ const shiftsRoutes = require('./routes/Shifts');
 const driversRoutes = require('./routes/Drivers');
 const ambulancebookingRoutes = require('./routes/ambulancebooking');
 const adminRoutes = require('./routes/Admin')
+const subscribersRoutes = require('./routes/subscribers');
 
 /* =====================
    API Routes (AFTER IMPORTS)
 ===================== */
+app.use('/api', subscribersRoutes);
 app.use('/api', adminRoutes);
 app.use('/api', unifiedLoginRoutes);
 app.use('/api', unifiedPasswordResetRoutes);

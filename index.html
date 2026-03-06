@@ -4810,8 +4810,22 @@ services from trusted labs near your location. </p>
             </div>
             <div style="flex: 1; min-width: 200px; margin-bottom: 20px;">
                 <h3 style="margin-bottom: 15px; font-size: 18px;">Subscribe to News Letter</h3>
-                <input type="email" placeholder="Enter your email" style="padding: 10px; margin-bottom: 10px; width: 80%; border: none; border-radius: 5px;">
-                <button style="padding: 10px; width: 50%; border: none; border-radius: 5px; background-color: teal; color: white; cursor: pointer;">Subscribe</button>
+
+                <input 
+                    type="email" 
+                    id="newsletterEmail"
+                    placeholder="Enter your email"
+                    style="padding: 10px; margin-bottom: 10px; width: 80%; border: none; border-radius: 5px;"
+                >
+
+                <button 
+                    onclick="subscribeNewsletter()"
+                    style="padding: 10px; width: 50%; border: none; border-radius: 5px; background-color: teal; color: white; cursor: pointer;"
+                >
+                    Subscribe
+                </button>
+
+                <p id="newsletterMsg" style="font-size:13px; margin-top:10px;"></p>
             </div>
             <div style="flex: 1; min-width: 200px; margin-bottom: 20px;">
                 <h3 style="margin-bottom: 15px; font-size: 18px;">Scan & Connect</h3>
@@ -4845,6 +4859,45 @@ services from trusted labs near your location. </p>
             <a href="#" style="color: white; text-decoration: none;">Privacy Policy</a> |
             <a href="#" style="color: white; text-decoration: none;">Terms of Use</a>
         </div>
+        <script>
+            async function subscribeNewsletter() {
+
+                const email = document.getElementById("newsletterEmail").value;
+                const msg = document.getElementById("newsletterMsg");
+
+                if (!email) {
+                    msg.style.color = "orange";
+                    msg.innerText = "Please enter your email";
+                    return;
+                }
+
+                try {
+
+                    const response = await fetch("https://24x7health.in/api/subscribers", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({ email })
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        msg.style.color = "lightgreen";
+                        msg.innerText = "Subscribed successfully!";
+                        document.getElementById("newsletterEmail").value = "";
+                    } else {
+                        msg.style.color = "red";
+                        msg.innerText = data.error || "Subscription failed";
+                    }
+
+                } catch (error) {
+                    msg.style.color = "red";
+                    msg.innerText = "Server error. Try again.";
+                }
+            }
+        </script>
     </footer>
 
 
