@@ -108,7 +108,7 @@
             let isLoading = false;
             let offset = 0;
             const BATCH_SIZE = 50;
-            const CACHE_KEY = 'providersData_v4';
+            const CACHE_KEY = 'providersData_v6';
             const CACHE_EXPIRY_MS = 24 * 60 * 60 * 1000; // 24 hours
             // DOM elements
             const providerTypeSelect = document.getElementById('provider-type');
@@ -190,49 +190,105 @@
             };
 
             const loadAreaButtons = async () => {
+
+                const providerType = providerTypeSelect.value;
                 const country = countrySelect.value;
                 const state = stateSelect.value;
                 const zip = zipInput.value;
-                const res = await fetch(`https://www.24x7health.in/api/doctor-areas?country=${country}&state=${state}&zipcode=${zip}`);
-                const areas = await res.json();
+
+                let areas = [];
+
+                if (providerType === "all" || providerType === "doctor") {
+
+                    const res = await fetch(`https://www.24x7health.in/api/doctor-areas?country=${country}&state=${state}&zipcode=${zip}`);
+                    const doctorAreas = await res.json();
+
+                    doctorAreas.forEach(a => {
+                        areas.push({ area: a.area, count: a.doctor_count });
+                    });
+                }
+
+                if (providerType === "all" || providerType === "diagnostic") {
+
+                    const res = await fetch(`https://www.24x7health.in/api/diagnostic-areas?country=${country}&state=${state}&zipcode=${zip}`);
+                    const diagnosticAreas = await res.json();
+
+                    diagnosticAreas.forEach(a => {
+                        areas.push({ area: a.area, count: a.center_count });
+                    });
+                }
+
                 const areaContainer = document.getElementById("area-filters");
                 areaContainer.innerHTML = "";
-                areas.forEach(a => {
-                    const btn = document.createElement("button");
-                    btn.textContent = `${a.area} (${a.doctor_count})`;
-                    btn.className = "area-btn px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm hover:bg-blue-600 hover:text-white transition";
-                    if (selectedArea === a.area) {
-                        btn.classList.remove("bg-blue-100", "text-blue-700");
-                        btn.classList.add("bg-blue-600", "text-white");
-                    }
-                    btn.onclick = () => filterByArea(a.area);
-                    areaContainer.appendChild(btn);
-                });
-            };
 
+                areas.forEach(a => {
+
+                    const btn = document.createElement("button");
+
+                    btn.textContent = `${a.area} (${a.count})`;
+
+                    btn.className = "px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm hover:bg-blue-600 hover:text-white transition";
+
+                    btn.onclick = () => filterByArea(a.area);
+
+                    areaContainer.appendChild(btn);
+
+                });
+
+            };
+            
             const filterByArea = async (area) => {
+
                 selectedArea = area;
+
+                const providerType = providerTypeSelect.value;
                 const country = countrySelect.value;
                 const state = stateSelect.value;
                 const zip = zipInput.value;
-                const res = await fetch(`https://www.24x7health.in/api/doctors/search?country=${country}&state=${state}&zipcode=${zip}&area=${area}`);
-                const doctors = await res.json();
-                displayedProviders = doctors.map(d => ({
-                    id: d.uid,
-                    type: "doctor",
-                    name: `Dr. ${d.first_name} ${d.last_name}`,
-                    specialization: d.specialization,
-                    clinic: d.clinic,
-                    area: d.area,
-                    address: `${d.door_no}, ${d.area}, ${d.city}, ${d.state}, ${d.country} - ${d.zipcode}`
-                }));
-                resultsContainer.innerHTML = "";
-                offset = 0;
-                displayProvidersBatch(displayedProviders.slice(0, BATCH_SIZE));
-                loadAreaButtons();
-                // refresh highlight
-            };
 
+                let doctors = [];
+                let diagnostics = [];
+
+                if (providerType === "all" || providerType === "doctor") {
+
+                    const res = await fetch(`/api/doctors/search?country=${country}&state=${state}&zipcode=${zip}&area=${area}`);
+                    const data = await res.json();
+
+                    doctors = data.map(d => ({
+                        id: d.uid,
+                        type: "doctor",
+                        name: `Dr. ${d.first_name} ${d.last_name}`,
+                        specialization: d.specialization,
+                        clinic: d.clinic,
+                        area: d.area,
+                        address: `${d.door_no}, ${d.area}, ${d.city}, ${d.state}, ${d.country} - ${d.zipcode}`
+                    }));
+                }
+
+                if (providerType === "all" || providerType === "diagnostic") {
+
+                    const res = await fetch(`/api/diagnostics/search?country=${country}&state=${state}&zipcode=${zip}&area=${area}`);
+                    const data = await res.json();
+
+                    diagnostics = data.map(d => ({
+                        id: d.center_id,
+                        type: "diagnostic",
+                        name: d.center_name,
+                        services: JSON.parse(d.services || "[]"),
+                        area: d.area,
+                        address: `${d.address}, ${d.area}, ${d.city}, ${d.state}, ${d.country} - ${d.pincode}`
+                    }));
+                }
+
+                displayedProviders = [...doctors, ...diagnostics];
+
+                offset = 0;
+                resultsContainer.innerHTML = "";
+
+                displayProvidersBatch(displayedProviders.slice(0, BATCH_SIZE));
+
+            };
+                        
             const displayProvidersBatch = (providers) => {
                 resultsSection.classList.remove('hidden');
                 if (providers.length === 0 && offset === 0) {
@@ -299,34 +355,65 @@
             };
 
             const filterAndDisplayProviders = async () => {
+
                 const providerType = providerTypeSelect.value;
                 const country = countrySelect.value;
                 const state = stateSelect.value;
                 const zipCode = zipInput.value;
+
                 selectedArea = null;
-                if (!providerType && !country && !state && !zipCode) {
-                    alert("Please select at least one filter before searching.");
-                    return;
-                }
+
                 loadingSection.classList.remove('hidden');
-                const res = await fetch(`https://www.24x7health.in/api/doctors/search?country=${country}&state=${state}&zipcode=${zipCode}`);
-                const doctors = await res.json();
+
+                let doctors = [];
+                let diagnostics = [];
+
+                // 🔹 Doctors
+                if (providerType === "all" || providerType === "doctor") {
+
+                    const res = await fetch(`https://www.24x7health.in/api/doctors/search?country=${country}&state=${state}&zipcode=${zipCode}`);
+                    doctors = await res.json();
+
+                    doctors = doctors.map(d => ({
+                        id: d.uid,
+                        type: "doctor",
+                        name: `Dr. ${d.first_name} ${d.last_name}`,
+                        specialization: d.specialization,
+                        clinic: d.clinic,
+                        area: d.area,
+                        address: `${d.door_no}, ${d.area}, ${d.city}, ${d.state}, ${d.country} - ${d.zipcode}`
+                    }));
+                }
+
+                // 🔹 Diagnostics
+                if (providerType === "all" || providerType === "diagnostic") {
+
+                    const res = await fetch(`https://www.24x7health.in/api/diagnostics/search?country=${country}&state=${state}&zipcode=${zipCode}`);
+                    const data = await res.json();
+
+                    diagnostics = data.map(d => ({
+                        id: d.center_id,
+                        type: "diagnostic",
+                        name: d.center_name,
+                        services: JSON.parse(d.services || "[]"),
+                        area: d.area,
+                        address: `${d.address}, ${d.area}, ${d.city}, ${d.state}, ${d.country} - ${d.pincode}`
+                    }));
+                }
+
                 loadingSection.classList.add('hidden');
-                displayedProviders = doctors.map(d => ({
-                    id: d.uid,
-                    type: "doctor",
-                    name: `Dr. ${d.first_name} ${d.last_name}`,
-                    specialization: d.specialization,
-                    clinic: d.clinic,
-                    area: d.area,
-                    address: `${d.door_no}, ${d.area}, ${d.city}, ${d.state}, ${d.country} - ${d.zipcode}`
-                }));
+
+                // 🔹 merge results
+                displayedProviders = [...doctors, ...diagnostics];
+
                 offset = 0;
                 resultsContainer.innerHTML = '';
+
                 await loadAreaButtons();
+
                 displayProvidersBatch(displayedProviders.slice(0, BATCH_SIZE));
             };
-
+            
             const clearFilters = () => {
                 providerTypeSelect.value = "all";
                 countrySelect.value = "";
