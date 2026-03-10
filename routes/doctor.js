@@ -146,44 +146,90 @@ router.post("/doctors", upload.single("profile_image"), (req, res) => {
   });
 });
 
-// Doctor Login (from eyedoctors.js)
-router.post("/doctorlogin", async (req, res) => {
-    const { email, password } = req.body;
+// ==================== DOCTOR LOGIN ====================
+router.post("/doctorlogin", (req, res) => {
 
-    db.query("SELECT * FROM doctors WHERE email = ?", [email], (err, results) => {
-        if (err) return res.status(500).json({ message: "Database error!" });
+  const { email, password } = req.body;
 
-        if (results.length === 0) {
-            return res.status(404).json({ message: "Doctor not found!" });
-        }
+  console.log("🔐 Login request:", email);
 
-        const doctor = results[0];
-        if (doctor.password !== password) {
-            return res.status(401).json({ message: "Invalid credentials!" });
-        }
-        // ✅ MARK DOCTOR ONLINE
-        db.query("UPDATE doctors SET is_online = TRUE WHERE uid = ?", [doctor.uid]);
+  db.query(
+    "SELECT * FROM doctors WHERE email = ?",
+    [email],
+    (err, results) => {
 
-        res.status(200).json({
-            message: "Login successful",
-            uid: doctor.uid,
-            doctor: {
-                name: doctor.first_name + " " + doctor.last_name,
-                email: doctor.email,
-                specialization: doctor.specialization
+      if (err) {
+        console.error("Database error:", err);
+        return res.status(500).json({ message: "Database error!" });
+      }
+
+      if (results.length === 0) {
+        console.log("❌ Doctor not found:", email);
+        return res.status(404).json({ message: "Doctor not found!" });
+      }
+
+      const doctor = results[0];
+
+      if (doctor.password !== password) {
+        console.log("❌ Invalid password:", email);
+        return res.status(401).json({ message: "Invalid credentials!" });
+      }
+
+      console.log("✅ Doctor authenticated:", doctor.uid);
+
+      // UPDATE ONLINE STATUS
+      db.query(
+        "UPDATE doctors SET is_online = 1 WHERE uid = ?",
+        [doctor.uid],
+        (updateErr, updateResult) => {
+
+          if (updateErr) {
+            console.error("❌ Online update error:", updateErr);
+            return res.status(500).json({ message: "Failed to update status" });
+          }
+
+          console.log("🟢 Online status updated");
+          console.log("Rows affected:", updateResult.affectedRows);
+
+          // Check the value
+          db.query(
+            "SELECT is_online FROM doctors WHERE uid = ?",
+            [doctor.uid],
+            (err2, result2) => {
+
+              if (!err2 && result2.length > 0) {
+                console.log("Current is_online:", result2[0].is_online);
+              }
+
+              return res.status(200).json({
+                message: "Login successful",
+                uid: doctor.uid,
+                doctor: {
+                  name: doctor.first_name + " " + doctor.last_name,
+                  email: doctor.email,
+                  specialization: doctor.specialization
+                }
+              });
+
             }
-        });
-    });
+          );
+
+        }
+      );
+
+    }
+  );
+
 });
 
 // Get Online Doctors for Instant Consultation (new endpoint)
-router.get("/online-doctors", (req,res)=>{
+router.get("/online-doctors",(req,res)=>{
 
 const sql = `
-SELECT id, uid, first_name, last_name, specialization,
+SELECT uid, first_name, last_name, specialization,
 consultation_fee, profile_image_url
 FROM doctors
-WHERE is_online = TRUE
+WHERE is_online = 1
 AND instant_consultation = TRUE
 `;
 
@@ -663,11 +709,17 @@ router.post("/doctor-logout", (req,res)=>{
 const { uid } = req.body;
 
 db.query(
-"UPDATE doctors SET is_online = FALSE WHERE uid = ?",
+"UPDATE doctors SET is_online = 0 WHERE uid = ?",
 [uid],
 (err)=>{
-if(err) return res.status(500).json({message:"error"});
+
+if(err){
+console.error(err);
+return res.status(500).json({message:"error"});
+}
+
 res.json({message:"Doctor offline"});
+
 });
 
 });

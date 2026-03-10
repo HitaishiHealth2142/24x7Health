@@ -87,7 +87,7 @@ font-weight:bold;
 
 <h1>Instant Video Consultation</h1>
 
-<div id="doctorList"></div>
+<div id="doctorList">Loading doctors...</div>
 
 </div>
 
@@ -95,32 +95,50 @@ font-weight:bold;
 
 const socket = io("https://24x7health.in");
 
-const doctor = JSON.parse(sessionStorage.getItem("instantDoctor"));
-
-const patientName = localStorage.getItem("fullName");
+const patientName = localStorage.getItem("fullName") || "Patient";
 const patientId = localStorage.getItem("patientId");
 
-if(!doctor){
+/* ------------------------------
+LOAD ONLINE DOCTORS
+------------------------------ */
 
-document.body.innerHTML="No doctor selected";
+async function loadOnlineDoctors(){
+
+try{
+
+const res = await fetch("/api/online-doctors");
+
+const doctors = await res.json();
+
+const container = document.getElementById("doctorList");
+
+if(!doctors || doctors.length===0){
+
+container.innerHTML = "<p>No doctors available right now.</p>";
+
+return;
 
 }
 
-// render doctor card
+container.innerHTML="";
 
-document.getElementById("doctorList").innerHTML=`
+doctors.forEach(doc=>{
 
-<div class="doctor-card">
+const card = document.createElement("div");
+
+card.className="doctor-card";
+
+card.innerHTML = `
 
 <div class="doctor-info">
 
-<img src="${doctor.image}" class="doctor-img">
+<img src="${doc.profile_image_url || 'https://placehold.co/60'}" class="doctor-img">
 
 <div>
 
-<h3>${doctor.name}</h3>
+<h3>Dr. ${doc.first_name} ${doc.last_name}</h3>
 
-<p>${doctor.specialization}</p>
+<p>${doc.specialization}</p>
 
 <span class="status">Available Now</span>
 
@@ -128,28 +146,51 @@ document.getElementById("doctorList").innerHTML=`
 
 </div>
 
-<button class="join-btn" onclick="startConsult()">
+<button class="join-btn" onclick="startConsult('${doc.uid}')">
 
 Join Video
 
 </button>
 
-</div>
-
 `;
 
-function startConsult(){
+container.appendChild(card);
 
-const roomId="room_"+Date.now();
+});
+
+}catch(err){
+
+console.error(err);
+
+document.getElementById("doctorList").innerHTML="Failed to load doctors";
+
+}
+
+}
+
+/* ------------------------------
+START CONSULTATION
+------------------------------ */
+
+function startConsult(doctorUid){
+
+if(!patientId){
+
+alert("Please login as patient");
+
+window.location.href="login.html";
+
+return;
+
+}
+
+const roomId = "room_" + Date.now();
 
 socket.emit("join-call-room",{
 
 roomId:roomId,
-
-doctorUid:doctor.uid,
-
+doctorUid:doctorUid,
 patientId:patientId,
-
 patientName:patientName
 
 });
@@ -157,6 +198,12 @@ patientName:patientName
 window.location.href="meet.html?roomId="+roomId;
 
 }
+
+/* ------------------------------
+INIT
+------------------------------ */
+
+loadOnlineDoctors();
 
 </script>
 
