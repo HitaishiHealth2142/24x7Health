@@ -1217,18 +1217,46 @@
       LOGOUT
     ----------------------------- */
 
-    function logout(){
+function logout(){
 
-    localStorage.clear();
+  const doctorUid = localStorage.getItem("doctorUid");
 
-    fetch(`${API_BASE}/logout`,{method:"POST"}).finally(()=>{
+  if(!doctorUid){
+  window.location.href="login.html";
+  return;
+  }
 
-    window.location.href="login.html";
+  /* SET DOCTOR OFFLINE */
 
-    });
+  fetch(`${API_BASE}/doctor-logout`,{
+  method:"POST",
+  headers:{
+  "Content-Type":"application/json"
+  },
+  body: JSON.stringify({
+  uid: doctorUid
+  })
+  })
+  .then(()=>{
 
-    }
+  console.log("Doctor offline");
 
+  localStorage.clear();
+
+  window.location.href="login.html";
+
+  })
+  .catch(err=>{
+
+  console.error("Logout error",err);
+
+  localStorage.clear();
+
+  window.location.href="login.html";
+
+  });
+
+}
     /* -----------------------------
       START
     ----------------------------- */
