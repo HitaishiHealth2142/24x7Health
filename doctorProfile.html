@@ -857,318 +857,384 @@
       </div>
     </div>
   </div>
-
+  
   <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.min.js"></script>
+
   <script>
+
     let doctorUid = null;
-    const API_BASE = '/api'; // Use relative path
+    const API_BASE = "/api";
 
-    function displayPageMessage(message, type = 'success') {
-      const msgDiv = document.getElementById('pageMessage');
-      msgDiv.textContent = message;
-      msgDiv.className = type;
-      msgDiv.style.display = 'block';
-      setTimeout(() => { msgDiv.style.display = 'none'; }, 4000);
+    const socket = io("https://24x7health.in", { transports: ["websocket","polling"] });
+
+    /* -----------------------------
+      PAGE MESSAGE
+    ----------------------------- */
+
+    function displayPageMessage(message, type="success"){
+
+    const msgDiv = document.getElementById("pageMessage");
+
+    msgDiv.textContent = message;
+    msgDiv.className = type;
+    msgDiv.style.display="block";
+
+    setTimeout(()=>{
+    msgDiv.style.display="none";
+    },4000);
+
     }
 
-    function showLoading(isLoading) {
-      document.getElementById('loadingIndicator').style.display = isLoading ? 'block' : 'none';
-      const sections = ['dashboard', 'appointments', 'history', 'update' , 'wallet'];
-      sections.forEach(id => {
-          const el = document.getElementById(id);
-          if (el) el.style.display = isLoading ? 'none' : el.style.display;
-      });
-    }
+    /* -----------------------------
+      LOADING
+    ----------------------------- */
 
-    function showSection(sectionId) {
-      document.querySelectorAll('.content-area .section').forEach(sec => sec.style.display = 'none');
-      document.getElementById(sectionId).style.display = 'block';
+    function showLoading(isLoading){
 
-      document.querySelectorAll('.sidebar .nav-button').forEach(btn => {
-          btn.classList.toggle('active', btn.dataset.section === sectionId);
-      });
-      
-      // Dynamically load data when a section is shown
-      if (sectionId === 'appointments') loadAppointments();
-      if (sectionId === 'history') loadHistory();
-      if(sectionId === "wallet"){loadDoctorWallet();}
-    }
-    
-    function populateProfileData(doctor) {
-      const fullName = `Dr. ${doctor.first_name || ''} ${doctor.last_name || ''}`;
-      const defaultImage = 'https://placehold.co/120x120/007BFF/FFFFFF?text=Dr';
-      const profileImageUrl = doctor.profile_image_url ? doctor.profile_image_url : defaultImage;
+    document.getElementById("loadingIndicator").style.display = isLoading ? "block":"none";
 
-      // Sidebar & Welcome Message
-      document.getElementById("sidebarDoctorImage").src = profileImageUrl;
-      document.getElementById("sidebarDoctorName").innerText = fullName;
-      document.getElementById("sidebarDoctorSpecialization").innerText = doctor.specialization || '';
-      document.getElementById("welcomeName").innerText = fullName;
-      
-      // Update Form Pre-fill
-      for (const key in doctor) {
-          const element = document.getElementById(key);
-          if (element) {
-              element.value = doctor[key] || '';
-          }
-      }
-      // Update image preview in the form
-      document.getElementById("imagePreview").src = profileImageUrl;
-    }
+    const sections = ["dashboard","appointments","history","update","wallet"];
 
-    async function initializeProfile() {
-      showLoading(true);
-      doctorUid = localStorage.getItem("doctorUid");
+    sections.forEach(id=>{
 
-      if (!doctorUid) {
-        displayPageMessage("Authentication error. Redirecting to login...", 'error');
-        setTimeout(() => window.location.href = "login.html", 1500);
-        return;
-      }
-      
-      // Initialize the WebSocket connection for real-time calls
-      initializeSocket(doctorUid);
+    const el = document.getElementById(id);
 
-      try {
-        const response = await fetch(`${API_BASE}/gdoctors/${doctorUid}`);
-        if (!response.ok) throw new Error(`Server error: ${response.status}`);
-        
-        const doctorData = await response.json();
-        populateProfileData(doctorData);
-        loadDashboardStats(); // Load stats after getting profile
-        
-        showLoading(false);
-        showSection('dashboard');
-      } catch (error) {
-        console.error("Failed to load profile:", error);
-        displayPageMessage("Could not load your profile. Please log in again.", 'error');
-        showLoading(false);
-      }
-    }
-    
-    // --- New Socket.IO for Doctor Profile ---
-    function initializeSocket(doctorUid) {
-        const socket = io("https://24x7health.in", { transports: ["websocket", "polling"] });
-        const invitationContainer = document.getElementById('call-invitation-container');
+    if(el) el.style.display = isLoading ? "none":el.style.display;
 
-        socket.on('connect', () => {
-            console.log(`Socket connected. Joining doctor notification room: doctor-notify-${doctorUid}`);
-            socket.emit('join-doctor-room', doctorUid);
-        });
-
-        socket.on('new-call', (data) => {
-            console.log("New call invitation received:", data);
-            const { patientId, patientName, roomId } = data;
-            
-            const banner = document.createElement('div');
-            banner.className = 'call-invitation-banner';
-            banner.innerHTML = `
-                <p>Incoming video call from Patient: ${patientName}</p>
-                <div class="btn-group">
-                    <a href="meet.html?roomId=${roomId}" class="btn join-btn">Join Call</a>
-                    <button class="btn dismiss-btn" onclick="this.parentNode.parentNode.remove()">Dismiss</button>
-                </div>
-            `;
-            invitationContainer.innerHTML = ''; // Clear any previous banners
-            invitationContainer.style.display = 'block';
-            invitationContainer.appendChild(banner);
-        });
-
-        socket.on('disconnect', () => {
-            console.log("Socket disconnected.");
-        });
-    }
-
-    async function loadDashboardStats() {
-      try {
-          const res = await fetch(`${API_BASE}/doctors/${doctorUid}/stats`);
-          const data = await res.json();
-          if (data.success) {
-              document.getElementById('todayAppointments').textContent = data.stats.today || 0;
-              document.getElementById('completedAppointments').textContent = data.stats.completed || 0;
-              document.getElementById('pendingAppointments').textContent = data.stats.pending || 0;
-          }
-      } catch (error) {
-          console.error("Failed to load stats:", error);
-      }
-    }
-
-    async function loadAppointments() {
-      const tableBody = document.getElementById("appointmentTableBody");
-      tableBody.innerHTML = '<tr><td colspan="8">Loading appointments...</td></tr>';
-      try {
-          const res = await fetch(`${API_BASE}/doctors/${doctorUid}/appointments`);
-          const data = await res.json();
-          tableBody.innerHTML = ''; // Clear loading message
-          if (data.success && data.appointments.length > 0) {
-              data.appointments.forEach(app => {
-                  const row = `
-                      <tr>
-                          <td>${app.patient_name || 'N/A'}</td>
-                          <td>${app.patient_email || 'N/A'}</td>
-                          <td>${app.patient_id || 'N/A'}</td>
-                          <td>${app.mode || 'N/A'}</td>
-                          <td>${new Date(app.date).toLocaleDateString()}</td>
-                          <td>${app.time || 'N/A'}</td>
-                          <td><span class="status-badge status-${app.payment_status?.toLowerCase()}">${app.payment_status || 'N/A'}</span></td>
-                      </tr>
-                  `;
-                  tableBody.innerHTML += row;
-              });
-          } else {
-              tableBody.innerHTML = '<tr><td colspan="7" style="text-align:center;">No appointments found.</td></tr>';
-          }
-      } catch (error) {
-          console.error("Failed to load appointments:", error);
-          tableBody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Error loading data.</td></tr>';
-      }
-    }
-
-    async function loadHistory() {
-      const tableBody = document.getElementById("historyTableBody");
-      tableBody.innerHTML = '<tr><td colspan="5">Loading history...</td></tr>';
-      try {
-          const res = await fetch(`${API_BASE}/doctors/${doctorUid}/history`);
-          const data = await res.json();
-          tableBody.innerHTML = '';
-          if (data.success && data.history.length > 0) {
-              data.history.forEach(item => {
-                  const row = `
-                      <tr>
-                          <td>${item.patient_name || 'N/A'}</td>
-                          <td>${item.patient_email || 'N/A'}</td>
-                          <td>${item.patient_id || 'N/A'}</td>
-                          <td>${new Date(item.last_visit_date).toLocaleDateString()}</td>
-                          <td>${item.status || 'Completed'}</td>
-                      </tr>
-                  `;
-                  tableBody.innerHTML += row;
-              });
-          } else {
-              tableBody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No treatment history found.</td></tr>';
-          }
-      } catch (error) {
-          console.error("Failed to load history:", error);
-          tableBody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Error loading data.</td></tr>';
-      }
-    }
-
-    async function loadDoctorWallet() {
-
-      try {
-
-        const res = await fetch(`${API_BASE}/doctor/wallet/${doctorUid}`);
-        const data = await res.json();
-
-        document.getElementById("doctorWallet").innerText = data.wallet || 0;
-
-        const table = document.getElementById("walletTableBody");
-        table.innerHTML = "";
-
-        if(!data.transactions || data.transactions.length === 0){
-            table.innerHTML =
-            `<tr>
-              <td colspan="7" style="text-align:center;padding:20px;">
-              No earnings yet
-              </td>
-            </tr>`;
-            return;
-        }
-
-        data.transactions.forEach(tx => {
-
-            const row = `
-            <tr>
-
-              <td>${tx.appointment_uid}</td>
-
-              <td>${tx.patient_name}</td>
-
-              <td>${tx.patient_email}</td>
-
-              <td>${new Date(tx.appointment_date).toLocaleDateString()}</td>
-
-              <td>${tx.appointment_time}</td>
-
-              <td>${tx.payment_id}</td>
-
-              <td style="color:#28A745;font-weight:600;">₹${tx.amount}</td>
-
-              <td>
-              <span class="status-badge 
-              ${tx.admin_status === "Processed" ? "status-paid" :
-                tx.admin_status === "Rejected" ? "status-rejected" :
-                "status-pending"}">
-              ${tx.admin_status || "Pending"}
-              </span>
-              </td>
-
-            </tr>
-            `;
-
-            table.innerHTML += row;
-
-        });
-
-      } catch(err) {
-
-        console.error("Wallet loading error:", err);
-
-      }
-
-    }  
-
-    function logout() {
-          localStorage.clear();
-          fetch(`${API_BASE}/logout`, { method: "POST" })
-            .finally(() => {
-              window.location.href = "login.html";
-            });
-        }
-
-    document.getElementById("updateForm").addEventListener("submit", async function (e) {
-      e.preventDefault();
-      if (!doctorUid) {
-        displayPageMessage("Cannot update: Doctor ID is missing.", 'error');
-        return;
-      }
-
-      const formData = new FormData(this);
-      // Note: FormData will automatically set the correct Content-Type for file uploads
-      
-      try {
-        const response = await fetch(`${API_BASE}/updatedoctors/${doctorUid}`, {
-          method: "PUT",
-          body: formData // Send FormData directly
-        });
-
-        const result = await response.json();
-        if (response.ok && result.success) {
-          displayPageMessage("Profile updated successfully!", 'success');
-          // The result should contain the updated doctor data, including the new image URL
-          populateProfileData(result.updatedDoctor);
-          showSection('dashboard');
-        } else {
-          throw new Error(result.message || "Update failed.");
-        }
-      } catch (error) {
-        console.error("Update error:", error);
-        displayPageMessage(error.message, 'error');
-      }
     });
 
-    // Image preview logic
-    document.getElementById('profile_image').addEventListener('change', function(event) {
-      if (event.target.files && event.target.files[0]) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-          document.getElementById('imagePreview').src = e.target.result;
-        };
-        reader.readAsDataURL(event.target.files[0]);
-      }
+    }
+
+    /* -----------------------------
+      SECTION SWITCH
+    ----------------------------- */
+
+    function showSection(sectionId){
+
+    document.querySelectorAll(".content-area .section").forEach(sec=>sec.style.display="none");
+
+    document.getElementById(sectionId).style.display="block";
+
+    document.querySelectorAll(".sidebar .nav-button").forEach(btn=>{
+
+    btn.classList.toggle("active", btn.dataset.section === sectionId);
+
     });
 
-    document.addEventListener('DOMContentLoaded', initializeProfile);
+    if(sectionId==="appointments") loadAppointments();
+    if(sectionId==="history") loadHistory();
+    if(sectionId==="wallet") loadDoctorWallet();
+
+    }
+
+    /* -----------------------------
+      PROFILE DATA
+    ----------------------------- */
+
+    function populateProfileData(doctor){
+
+    const fullName = `Dr. ${doctor.first_name || ""} ${doctor.last_name || ""}`;
+
+    const defaultImage = "https://placehold.co/120x120/007BFF/FFFFFF?text=Dr";
+
+    const profileImageUrl = doctor.profile_image_url ? doctor.profile_image_url : defaultImage;
+
+    document.getElementById("sidebarDoctorImage").src = profileImageUrl;
+    document.getElementById("sidebarDoctorName").innerText = fullName;
+    document.getElementById("sidebarDoctorSpecialization").innerText = doctor.specialization || "";
+
+    document.getElementById("welcomeName").innerText = fullName;
+
+    for(const key in doctor){
+
+    const element = document.getElementById(key);
+
+    if(element) element.value = doctor[key] || "";
+
+    }
+
+    document.getElementById("imagePreview").src = profileImageUrl;
+
+    }
+
+    /* -----------------------------
+      INITIALIZE PROFILE
+    ----------------------------- */
+
+    async function initializeProfile(){
+
+    showLoading(true);
+
+    doctorUid = localStorage.getItem("doctorUid");
+
+    if(!doctorUid){
+
+    displayPageMessage("Authentication error. Redirecting to login","error");
+
+    setTimeout(()=>{
+    window.location.href="login.html";
+    },1500);
+
+    return;
+
+    }
+
+    /* SOCKET JOIN ROOM */
+
+    socket.emit("join-doctor-room", doctorUid);
+
+    try{
+
+    const response = await fetch(`${API_BASE}/gdoctors/${doctorUid}`);
+
+    const doctorData = await response.json();
+
+    populateProfileData(doctorData);
+
+    loadDashboardStats();
+
+    showLoading(false);
+
+    showSection("dashboard");
+
+    }catch(err){
+
+    console.error(err);
+
+    displayPageMessage("Failed to load profile","error");
+
+    showLoading(false);
+
+    }
+
+    }
+
+    /* -----------------------------
+      SOCKET EVENTS
+    ----------------------------- */
+
+    socket.on("connect",()=>{
+
+    console.log("Socket connected");
+
+    });
+
+    socket.on("new-call",(data)=>{
+
+    console.log("Incoming call:",data);
+
+    const invitationContainer = document.getElementById("call-invitation-container");
+
+    const banner = document.createElement("div");
+
+    banner.className="call-invitation-banner";
+
+    banner.innerHTML = `
+
+    <p>Incoming video call from Patient: ${data.patientName}</p>
+
+    <div class="btn-group">
+
+    <a href="meet.html?roomId=${data.roomId}" class="btn join-btn">Join Call</a>
+
+    <button class="btn dismiss-btn" onclick="this.parentNode.parentNode.remove()">Dismiss</button>
+
+    </div>
+
+    `;
+
+    invitationContainer.innerHTML="";
+
+    invitationContainer.style.display="block";
+
+    invitationContainer.appendChild(banner);
+
+    });
+
+    /* -----------------------------
+      DASHBOARD STATS
+    ----------------------------- */
+
+    async function loadDashboardStats(){
+
+    try{
+
+    const res = await fetch(`${API_BASE}/doctors/${doctorUid}/stats`);
+
+    const data = await res.json();
+
+    if(data.success){
+
+    document.getElementById("todayAppointments").textContent = data.stats.today || 0;
+
+    document.getElementById("completedAppointments").textContent = data.stats.completed || 0;
+
+    document.getElementById("pendingAppointments").textContent = data.stats.pending || 0;
+
+    }
+
+    }catch(err){
+
+    console.error("Stats error",err);
+
+    }
+
+    }
+
+    /* -----------------------------
+      APPOINTMENTS
+    ----------------------------- */
+
+    async function loadAppointments(){
+
+    const tableBody = document.getElementById("appointmentTableBody");
+
+    tableBody.innerHTML = `<tr><td colspan="8">Loading...</td></tr>`;
+
+    try{
+
+    const res = await fetch(`${API_BASE}/doctors/${doctorUid}/appointments`);
+
+    const data = await res.json();
+
+    tableBody.innerHTML="";
+
+    if(data.success && data.appointments.length>0){
+
+    data.appointments.forEach(app=>{
+
+    const row = `
+
+    <tr>
+
+    <td>${app.patient_name || "N/A"}</td>
+
+    <td>${app.patient_email || "N/A"}</td>
+
+    <td>${app.patient_id || "N/A"}</td>
+
+    <td>${app.mode || "N/A"}</td>
+
+    <td>${new Date(app.date).toLocaleDateString()}</td>
+
+    <td>${app.time || "N/A"}</td>
+
+    <td>
+
+    <span class="status-badge status-${app.payment_status?.toLowerCase()}">
+
+    ${app.payment_status || "N/A"}
+
+    </span>
+
+    </td>
+
+    </tr>
+
+    `;
+
+    tableBody.innerHTML += row;
+
+    });
+
+    }else{
+
+    tableBody.innerHTML=`<tr><td colspan="7" style="text-align:center">No appointments</td></tr>`;
+
+    }
+
+    }catch(err){
+
+    tableBody.innerHTML=`<tr><td colspan="7">Error loading</td></tr>`;
+
+    }
+
+    }
+
+    /* -----------------------------
+      WALLET
+    ----------------------------- */
+
+    async function loadDoctorWallet(){
+
+    try{
+
+    const res = await fetch(`${API_BASE}/doctor/wallet/${doctorUid}`);
+
+    const data = await res.json();
+
+    document.getElementById("doctorWallet").innerText = data.wallet || 0;
+
+    const table = document.getElementById("walletTableBody");
+
+    table.innerHTML="";
+
+    if(!data.transactions || data.transactions.length===0){
+
+    table.innerHTML = `<tr><td colspan="7" style="text-align:center">No earnings yet</td></tr>`;
+
+    return;
+
+    }
+
+    data.transactions.forEach(tx=>{
+
+    const row = `
+
+    <tr>
+
+    <td>${tx.appointment_uid}</td>
+
+    <td>${tx.patient_name}</td>
+
+    <td>${tx.patient_email}</td>
+
+    <td>${new Date(tx.appointment_date).toLocaleDateString()}</td>
+
+    <td>${tx.appointment_time}</td>
+
+    <td>${tx.payment_id}</td>
+
+    <td style="color:#28A745;font-weight:600;">₹${tx.amount}</td>
+
+    </tr>
+
+    `;
+
+    table.innerHTML += row;
+
+    });
+
+    }catch(err){
+
+    console.error("Wallet error",err);
+
+    }
+
+    }
+
+    /* -----------------------------
+      LOGOUT
+    ----------------------------- */
+
+    function logout(){
+
+    localStorage.clear();
+
+    fetch(`${API_BASE}/logout`,{method:"POST"}).finally(()=>{
+
+    window.location.href="login.html";
+
+    });
+
+    }
+
+    /* -----------------------------
+      START
+    ----------------------------- */
+
+    document.addEventListener("DOMContentLoaded", initializeProfile);
+
   </script>
 
 </body>
