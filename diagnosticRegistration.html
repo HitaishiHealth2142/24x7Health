@@ -1478,6 +1478,7 @@
             });
         </script>
     <!-- Navbar Code Ends -->
+    
 
   <div class="container">
     <div class="form-header">
@@ -1753,6 +1754,9 @@
       license: null,
       upiQr: null
     };
+    document.getElementById("ifscCode").addEventListener("input", function(){
+      this.value = this.value.toUpperCase();
+    });
 
     // Initialize form
     document.addEventListener('DOMContentLoaded', function() {
@@ -1907,7 +1911,62 @@
       }
       
       // Add validation for other steps as needed
-      
+      // Step 3 validation
+      if (step === 3) {
+
+        const phone = document.getElementById('phone').value.trim();
+        const pincode = document.getElementById('pincode').value.trim();
+
+        const phoneRegex = /^[6-9]\d{9}$/;
+        const pincodeRegex = /^[1-9][0-9]{5}$/;
+
+        if (!phoneRegex.test(phone)) {
+          showAlert('Enter valid 10 digit mobile number', 'error');
+          return false;
+        }
+
+        if (!pincodeRegex.test(pincode)) {
+          showAlert('Enter valid 6 digit pincode', 'error');
+          return false;
+        }
+
+      }
+            
+      // Step 5 validation
+      if (step === 5) {
+
+        const accountHolder = document.getElementById('accountHolderName').value.trim();
+        const bankName = document.getElementById('bankName').value.trim();
+        const accountNumber = document.getElementById('accountNumber').value.trim();
+        const ifsc = document.getElementById('ifscCode').value.trim().toUpperCase();
+        const upi = document.getElementById('upiId').value.trim();
+
+        const accountRegex = /^[0-9]{9,18}$/;
+        const ifscRegex = /^[A-Z]{4}0[A-Z0-9]{6}$/;
+        const upiRegex = /^[a-zA-Z0-9._-]{2,256}@[a-zA-Z]{2,64}$/;
+
+        if (!accountHolder || !bankName || !accountNumber || !ifsc) {
+          showAlert('Please fill all required bank details', 'error');
+          return false;
+        }
+
+        if (!accountRegex.test(accountNumber)) {
+          showAlert('Invalid account number (must be 9–18 digits)', 'error');
+          return false;
+        }
+
+        if (!ifscRegex.test(ifsc)) {
+          showAlert('Invalid IFSC code (Example: SBIN0001234)', 'error');
+          return false;
+        }
+
+        if (upi && !upiRegex.test(upi)) {
+          showAlert('Invalid UPI ID (Example: name@upi)', 'error');
+          return false;
+        }
+
+      }
+            
       return true;
     }
     
