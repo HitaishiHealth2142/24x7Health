@@ -57,7 +57,10 @@ const createDoctorsTable = `
   to_time VARCHAR(20),
   additional_info TEXT,
   password VARCHAR(255),
-  profile_image_url VARCHAR(255)
+  profile_image_url VARCHAR(255),
+  is_online BOOLEAN DEFAULT FALSE,
+  consultation_fee INT DEFAULT 500,
+  instant_consultation BOOLEAN DEFAULT TRUE
 )
 `;
 
@@ -158,6 +161,8 @@ router.post("/doctorlogin", async (req, res) => {
         if (doctor.password !== password) {
             return res.status(401).json({ message: "Invalid credentials!" });
         }
+        // ✅ MARK DOCTOR ONLINE
+        db.query("UPDATE doctors SET is_online = TRUE WHERE uid = ?", [doctor.uid]);
 
         res.status(200).json({
             message: "Login successful",
@@ -169,6 +174,24 @@ router.post("/doctorlogin", async (req, res) => {
             }
         });
     });
+});
+
+// Get Online Doctors for Instant Consultation (new endpoint)
+router.get("/online-doctors", (req,res)=>{
+
+const sql = `
+SELECT id, uid, first_name, last_name, specialization,
+consultation_fee, profile_image_url
+FROM doctors
+WHERE is_online = TRUE
+AND instant_consultation = TRUE
+`;
+
+db.query(sql,(err,results)=>{
+if(err) return res.status(500).json({error:"db error"});
+res.json(results);
+});
+
 });
 
 // ==================== APPOINTMENT BOOKING ====================
@@ -632,6 +655,21 @@ router.delete("/deletedoctors/:uid", (req, res) => {
 
         res.status(200).json({ message: "Doctor deleted successfully!" });
     });
+});
+
+// ==================== DOCTOR LOGOUT ====================
+router.post("/doctor-logout", (req,res)=>{
+
+const { uid } = req.body;
+
+db.query(
+"UPDATE doctors SET is_online = FALSE WHERE uid = ?",
+[uid],
+(err)=>{
+if(err) return res.status(500).json({message:"error"});
+res.json({message:"Doctor offline"});
+});
+
 });
 
 module.exports = router;

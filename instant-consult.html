@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Instant Video Consultation</title>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.min.js"></script>
+
+<style>
+
+body{
+font-family:Arial;
+background:#f5f7fa;
+padding:40px;
+}
+
+.container{
+max-width:900px;
+margin:auto;
+}
+
+h1{
+text-align:center;
+margin-bottom:30px;
+}
+
+.doctor-card{
+
+background:white;
+padding:20px;
+border-radius:10px;
+box-shadow:0 5px 20px rgba(0,0,0,0.1);
+display:flex;
+align-items:center;
+justify-content:space-between;
+margin-bottom:20px;
+
+}
+
+.doctor-info{
+display:flex;
+align-items:center;
+gap:15px;
+}
+
+.doctor-img{
+
+width:60px;
+height:60px;
+border-radius:50%;
+object-fit:cover;
+
+}
+
+.join-btn{
+
+background:#28a745;
+border:none;
+padding:10px 20px;
+color:white;
+border-radius:5px;
+cursor:pointer;
+
+}
+
+.join-btn:hover{
+background:#218838;
+}
+
+.status{
+
+color:#28a745;
+font-weight:bold;
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>Instant Video Consultation</h1>
+
+<div id="doctorList"></div>
+
+</div>
+
+<script>
+
+const socket = io("https://24x7health.in");
+
+const doctor = JSON.parse(sessionStorage.getItem("instantDoctor"));
+
+const patientName = localStorage.getItem("fullName");
+const patientId = localStorage.getItem("patientId");
+
+if(!doctor){
+
+document.body.innerHTML="No doctor selected";
+
+}
+
+// render doctor card
+
+document.getElementById("doctorList").innerHTML=`
+
+<div class="doctor-card">
+
+<div class="doctor-info">
+
+<img src="${doctor.image}" class="doctor-img">
+
+<div>
+
+<h3>${doctor.name}</h3>
+
+<p>${doctor.specialization}</p>
+
+<span class="status">Available Now</span>
+
+</div>
+
+</div>
+
+<button class="join-btn" onclick="startConsult()">
+
+Join Video
+
+</button>
+
+</div>
+
+`;
+
+function startConsult(){
+
+const roomId="room_"+Date.now();
+
+socket.emit("join-call-room",{
+
+roomId:roomId,
+
+doctorUid:doctor.uid,
+
+patientId:patientId,
+
+patientName:patientName
+
+});
+
+window.location.href="meet.html?roomId="+roomId;
+
+}
+
+</script>
+
+</body>
+</html>
