@@ -560,8 +560,8 @@
         <button onclick="showSection('appointments')" class="nav-button" data-section="appointments"><i class="fas fa-calendar-check"></i> Appointments</button>
         <button onclick="showSection('history')" class="nav-button" data-section="history"><i class="fas fa-history"></i> Treatment History</button>
         <button onclick="showSection('update')" class="nav-button" data-section="update"><i class="fas fa-user-edit"></i> Update Profile</button>
-        <!-- wallet -->
         <button onclick="showSection('wallet')" class="nav-button" data-section="wallet"><i class="fas fa-wallet"></i>Wallet </button>
+        <button class="btn btn-outline-primary nav-btn" id="consultationBtn">Video Consultations</button>
       </div>
       
       <div class="sidebar-footer">
@@ -855,448 +855,497 @@
         </div>
 
       </div>
+
+      <!-- Consultation Content -->
+      <div id="consultationContent" style="display:none">
+
+        <h2>Waiting Consultations</h2>
+
+        <div id="consultationList">
+          No consultations yet
+        </div>
+
+      </div>
     </div>
   </div>
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.min.js"></script>
 
   <script>
+    // ========================================
+    // DOCTOR PROFILE DASHBOARD - MAIN SCRIPT
+    // ========================================
 
-    let doctorUid = null;
+    // ========================================
+    // GLOBAL VARIABLES & INITIALIZATION
+    // ========================================
     const API_BASE = "/api";
+    let doctorUid = null;
 
-    const socket = io("https://24x7health.in", { transports: ["websocket","polling"] });
-
-    /* -----------------------------
-      PAGE MESSAGE
-    ----------------------------- */
-
-    function displayPageMessage(message, type="success"){
-
-    const msgDiv = document.getElementById("pageMessage");
-
-    msgDiv.textContent = message;
-    msgDiv.className = type;
-    msgDiv.style.display="block";
-
-    setTimeout(()=>{
-    msgDiv.style.display="none";
-    },4000);
-
-    }
-
-    /* -----------------------------
-      LOADING
-    ----------------------------- */
-
-    function showLoading(isLoading){
-
-    document.getElementById("loadingIndicator").style.display = isLoading ? "block":"none";
-
-    const sections = ["dashboard","appointments","history","update","wallet"];
-
-    sections.forEach(id=>{
-
-    const el = document.getElementById(id);
-
-    if(el) el.style.display = isLoading ? "none":el.style.display;
-
+    // Initialize Socket.IO connection for real-time communication
+    const socket = io("https://24x7health.in", {
+      transports: ["websocket", "polling"]
     });
 
+    // ========================================
+    // UTILITY FUNCTIONS
+    // ========================================
+
+    /**
+     * Display a temporary message to the user
+     * @param {string} message - The message to display
+     * @param {string} type - Message type: "success" or "error"
+     */
+    function displayPageMessage(message, type = "success") {
+      const msgDiv = document.getElementById("pageMessage");
+      msgDiv.textContent = message;
+      msgDiv.className = type;
+      msgDiv.style.display = "block";
+
+      // Auto-dismiss message after 4 seconds
+      setTimeout(() => {
+        msgDiv.style.display = "none";
+      }, 4000);
     }
 
-    /* -----------------------------
-      SECTION SWITCH
-    ----------------------------- */
+    /**
+     * Toggle loading indicator visibility
+     * @param {boolean} isLoading - Show or hide loading state
+     */
+    function showLoading(isLoading) {
+      document.getElementById("loadingIndicator").style.display = isLoading ? "block" : "none";
+    }
 
-    function showSection(sectionId){
+    /**
+     * Switch between different dashboard sections
+     * @param {string} sectionId - The ID of the section to display
+     */
+    function showSection(sectionId) {
+      // Hide all sections
+      document.querySelectorAll(".content-area .section").forEach(sec => {
+        sec.style.display = "none";
+      });
 
-    document.querySelectorAll(".content-area .section").forEach(sec=>sec.style.display="none");
+      // Show selected section
+      document.getElementById(sectionId).style.display = "block";
 
-    document.getElementById(sectionId).style.display="block";
+      // Update active nav button
+      document.querySelectorAll(".sidebar .nav-button").forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.section === sectionId);
+      });
 
-    document.querySelectorAll(".sidebar .nav-button").forEach(btn=>{
+      // Load data for specific sections
+      if (sectionId === "appointments") loadAppointments();
+      if (sectionId === "history") loadHistory();
+      if (sectionId === "wallet") loadDoctorWallet();
+    }
 
-    btn.classList.toggle("active", btn.dataset.section === sectionId);
+    // ========================================
+    // PROFILE DATA MANAGEMENT
+    // ========================================
 
+    /**
+     * Populate all profile fields with doctor data
+     * @param {object} doctor - Doctor data object
+     */
+    function populateProfileData(doctor) {
+      const fullName = `Dr. ${doctor.first_name || ""} ${doctor.last_name || ""}`;
+      const defaultImage = "https://placehold.co/120x120/007BFF/FFFFFF?text=Dr";
+      const profileImageUrl = doctor.profile_image_url || defaultImage;
+
+      // Update sidebar profile section
+      document.getElementById("sidebarDoctorImage").src = profileImageUrl;
+      document.getElementById("sidebarDoctorName").innerText = fullName;
+      document.getElementById("sidebarDoctorSpecialization").innerText = doctor.specialization || "";
+
+      // Update dashboard welcome message
+      document.getElementById("welcomeName").innerText = fullName;
+
+      // Populate form fields with doctor data
+      for (const key in doctor) {
+        const element = document.getElementById(key);
+        if (element) element.value = doctor[key] || "";
+      }
+
+      // Update profile preview image
+      document.getElementById("imagePreview").src = profileImageUrl;
+    }
+
+    /**
+     * Initialize the profile page on page load
+     * Fetch doctor data and set up the dashboard
+     */
+    async function initializeProfile() {
+      showLoading(true);
+
+      // Get doctor UID from localStorage
+      doctorUid = localStorage.getItem("doctorUid");
+
+      if (!doctorUid) {
+        displayPageMessage("Authentication error. Redirecting to login", "error");
+        setTimeout(() => {
+          window.location.href = "login.html";
+        }, 1500);
+        return;
+      }
+
+      // Join doctor's socket room for real-time updates
+      socket.emit("join-doctor-room", doctorUid);
+
+      try {
+        // Fetch doctor profile data from API
+        const response = await fetch(`${API_BASE}/gdoctors/${doctorUid}`);
+        const doctorData = await response.json();
+
+        // Populate profile information
+        populateProfileData(doctorData);
+
+        // Load dashboard statistics
+        loadDashboardStats();
+
+        // Show dashboard and hide loading
+        showLoading(false);
+        showSection("dashboard");
+      } catch (err) {
+        console.error("Profile initialization error:", err);
+        displayPageMessage("Failed to load profile", "error");
+        showLoading(false);
+      }
+    }
+
+    // ========================================
+    // SOCKET.IO EVENT LISTENERS
+    // ========================================
+
+    // Socket connection successful
+    socket.on("connect", () => {
+      console.log("Socket connected successfully");
     });
 
-    if(sectionId==="appointments") loadAppointments();
-    if(sectionId==="history") loadHistory();
-    if(sectionId==="wallet") loadDoctorWallet();
+    /**
+     * Listen for incoming consultation requests
+     * Display notification when new call arrives
+     */
+    socket.on("new-call", (data) => {
+      console.log("Incoming call:", data);
 
-    }
+      const container = document.getElementById("consultationList");
+      const card = document.createElement("div");
 
-    /* -----------------------------
-      PROFILE DATA
-    ----------------------------- */
+      // Style the consultation card
+      card.style.padding = "15px";
+      card.style.marginBottom = "10px";
+      card.style.background = "white";
+      card.style.borderRadius = "10px";
 
-    function populateProfileData(doctor){
+      // Create card content with join button
+      card.innerHTML = `
+        <h4>Patient: ${data.patientName}</h4>
+        <button onclick="joinConsult('${data.roomId}')">
+          Join Now
+        </button>
+      `;
 
-    const fullName = `Dr. ${doctor.first_name || ""} ${doctor.last_name || ""}`;
-
-    const defaultImage = "https://placehold.co/120x120/007BFF/FFFFFF?text=Dr";
-
-    const profileImageUrl = doctor.profile_image_url ? doctor.profile_image_url : defaultImage;
-
-    document.getElementById("sidebarDoctorImage").src = profileImageUrl;
-    document.getElementById("sidebarDoctorName").innerText = fullName;
-    document.getElementById("sidebarDoctorSpecialization").innerText = doctor.specialization || "";
-
-    document.getElementById("welcomeName").innerText = fullName;
-
-    for(const key in doctor){
-
-    const element = document.getElementById(key);
-
-    if(element) element.value = doctor[key] || "";
-
-    }
-
-    document.getElementById("imagePreview").src = profileImageUrl;
-
-    }
-
-    /* -----------------------------
-      INITIALIZE PROFILE
-    ----------------------------- */
-
-    async function initializeProfile(){
-
-    showLoading(true);
-
-    doctorUid = localStorage.getItem("doctorUid");
-
-    if(!doctorUid){
-
-    displayPageMessage("Authentication error. Redirecting to login","error");
-
-    setTimeout(()=>{
-    window.location.href="login.html";
-    },1500);
-
-    return;
-
-    }
-
-    /* SOCKET JOIN ROOM */
-
-    socket.emit("join-doctor-room", doctorUid);
-
-    try{
-
-    const response = await fetch(`${API_BASE}/gdoctors/${doctorUid}`);
-
-    const doctorData = await response.json();
-
-    populateProfileData(doctorData);
-
-    loadDashboardStats();
-
-    showLoading(false);
-
-    showSection("dashboard");
-
-    }catch(err){
-
-    console.error(err);
-
-    displayPageMessage("Failed to load profile","error");
-
-    showLoading(false);
-
-    }
-
-    }
-
-    /* -----------------------------
-      SOCKET EVENTS
-    ----------------------------- */
-
-    socket.on("connect",()=>{
-
-    console.log("Socket connected");
-
+      container.appendChild(card);
     });
 
-    socket.on("new-call",(data)=>{
+    // ========================================
+    // CONSULTATION FUNCTIONS
+    // ========================================
 
-    console.log("Incoming call:",data);
+    /**
+     * Join a video consultation call
+     * @param {string} roomId - The room ID for the consultation
+     */
+    function joinConsult(roomId) {
+      window.location.href = "meet.html?roomId=" + roomId + "&doctorUid=" + doctorUid;
+    }
 
-    const invitationContainer = document.getElementById("call-invitation-container");
+    // ========================================
+    // DASHBOARD STATISTICS
+    // ========================================
 
-    const banner = document.createElement("div");
+    /**
+     * Load and display today's statistics
+     * Updates appointment counts and completion stats
+     */
+    async function loadDashboardStats() {
+      try {
+        // Fetch statistics from API
+        const res = await fetch(`${API_BASE}/doctors/${doctorUid}/stats`);
+        const data = await res.json();
 
-    banner.className="call-invitation-banner";
+        if (data.success) {
+          // Update stat cards
+          document.getElementById("todayAppointments").textContent = data.stats.today || 0;
+          document.getElementById("completedAppointments").textContent = data.stats.completed || 0;
+          document.getElementById("pendingAppointments").textContent = data.stats.pending || 0;
+        }
+      } catch (err) {
+        console.error("Stats loading error:", err);
+      }
+    }
 
-    banner.innerHTML = `
+    // ========================================
+    // APPOINTMENTS MANAGEMENT
+    // ========================================
 
-    <p>Incoming video call from Patient: ${data.patientName}</p>
+    /**
+     * Load and display all appointments
+     * Fetches from API and populates appointments table
+     */
+    async function loadAppointments() {
+      const tableBody = document.getElementById("appointmentTableBody");
+      tableBody.innerHTML = `<tr><td colspan="7">Loading...</td></tr>`;
 
-    <div class="btn-group">
+      try {
+        // Fetch appointments from API
+        const res = await fetch(`${API_BASE}/doctors/${doctorUid}/appointments`);
+        const data = await res.json();
+        tableBody.innerHTML = "";
 
-    <a href="meet.html?roomId=${data.roomId}" class="btn join-btn">Join Call</a>
+        // Populate table with appointment data
+        if (data.appointments && data.appointments.length > 0) {
+          data.appointments.forEach(app => {
+            const row = `
+              <tr>
+                <td>${app.patient_name || "N/A"}</td>
+                <td>${app.patient_email || "N/A"}</td>
+                <td>${app.patient_id || "N/A"}</td>
+                <td>${app.mode || "N/A"}</td>
+                <td>${new Date(app.date).toLocaleDateString()}</td>
+                <td>${app.time || "N/A"}</td>
+                <td>${app.payment_status || "N/A"}</td>
+              </tr>
+            `;
+            tableBody.innerHTML += row;
+          });
+        } else {
+          tableBody.innerHTML = `<tr><td colspan="7">No appointments</td></tr>`;
+        }
+      } catch (err) {
+        tableBody.innerHTML = `<tr><td colspan="7">Error loading appointments</td></tr>`;
+      }
+    }
 
-    <button class="btn dismiss-btn" onclick="this.parentNode.parentNode.remove()">Dismiss</button>
+    /**
+     * Load treatment history for patients
+     * Displays past consultations and treatments
+     */
+    async function loadHistory() {
+      const tableBody = document.getElementById("historyTableBody");
+      tableBody.innerHTML = `<tr><td colspan="5">Loading...</td></tr>`;
 
-    </div>
+      try {
+        // Fetch history from API
+        const res = await fetch(`${API_BASE}/doctors/${doctorUid}/history`);
+        const data = await res.json();
+        tableBody.innerHTML = "";
 
-    `;
+        // Populate history table
+        if (data.history && data.history.length > 0) {
+          data.history.forEach(item => {
+            const row = `
+              <tr>
+                <td>${item.patient_name || "N/A"}</td>
+                <td>${item.patient_email || "N/A"}</td>
+                <td>${item.patient_id || "N/A"}</td>
+                <td>${new Date(item.last_visit_date).toLocaleDateString()}</td>
+                <td>${item.status || "Completed"}</td>
+              </tr>
+            `;
+            tableBody.innerHTML += row;
+          });
+        } else {
+          tableBody.innerHTML = `<tr><td colspan="5">No treatment history</td></tr>`;
+        }
+      } catch (err) {
+        tableBody.innerHTML = `<tr><td colspan="5">Error loading history</td></tr>`;
+      }
+    }
 
-    invitationContainer.innerHTML="";
+    /**
+     * Load today's appointments for dashboard view
+     */
+    async function loadTodayAppointments() {
+      const table = document.getElementById("dashboardAppointmentTableBody");
 
-    invitationContainer.style.display="block";
+      try {
+        // Fetch appointments
+        const res = await fetch(`${API_BASE}/doctors/${doctorUid}/appointments`);
+        const data = await res.json();
+        table.innerHTML = "";
 
-    invitationContainer.appendChild(banner);
+        // Populate table
+        data.appointments.forEach(app => {
+          const row = `
+            <tr>
+              <td>${app.patient_name}</td>
+              <td>${app.time}</td>
+              <td>${app.mode}</td>
+              <td>${app.payment_status}</td>
+            </tr>
+          `;
+          table.innerHTML += row;
+        });
+      } catch (err) {
+        table.innerHTML = `<tr><td colspan="4">No appointments</td></tr>`;
+      }
+    }
 
+    // ========================================
+    // PROFILE UPDATE HANDLING
+    // ========================================
+
+    /**
+     * Handle profile form submission
+     * Sends updated doctor data to API
+     */
+    document.getElementById("updateForm").addEventListener("submit", async function(e) {
+      e.preventDefault();
+
+      const formData = new FormData(this);
+
+      try {
+        // Send update request to API
+        const res = await fetch(`${API_BASE}/updatedoctors/${doctorUid}`, {
+          method: "PUT",
+          body: formData
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+          displayPageMessage("Profile updated successfully");
+          populateProfileData(data.updatedDoctor);
+          showSection("dashboard");
+        } else {
+          displayPageMessage("Update failed", "error");
+        }
+      } catch (err) {
+        displayPageMessage("Update error", "error");
+      }
     });
 
-    /* -----------------------------
-      DASHBOARD STATS
-    ----------------------------- */
+    /**
+     * Handle profile image file selection
+     * Preview image before upload
+     */
+    document.getElementById("profile_image").addEventListener("change", function(e) {
+      const reader = new FileReader();
 
-    async function loadDashboardStats(){
+      reader.onload = function(event) {
+        // Display image preview
+        document.getElementById("imagePreview").src = event.target.result;
+      };
 
-    try{
-
-    const res = await fetch(`${API_BASE}/doctors/${doctorUid}/stats`);
-
-    const data = await res.json();
-
-    if(data.success){
-
-    document.getElementById("todayAppointments").textContent = data.stats.today || 0;
-
-    document.getElementById("completedAppointments").textContent = data.stats.completed || 0;
-
-    document.getElementById("pendingAppointments").textContent = data.stats.pending || 0;
-
-    }
-
-    }catch(err){
-
-    console.error("Stats error",err);
-
-    }
-
-    }
-
-    /* -----------------------------
-      APPOINTMENTS
-    ----------------------------- */
-
-    async function loadAppointments(){
-
-    const tableBody = document.getElementById("appointmentTableBody");
-
-    tableBody.innerHTML = `<tr><td colspan="8">Loading...</td></tr>`;
-
-    try{
-
-    const res = await fetch(`${API_BASE}/doctors/${doctorUid}/appointments`);
-
-    const data = await res.json();
-
-    tableBody.innerHTML="";
-
-    if(data.success && data.appointments.length>0){
-
-    data.appointments.forEach(app=>{
-
-    const row = `
-
-    <tr>
-
-    <td>${app.patient_name || "N/A"}</td>
-
-    <td>${app.patient_email || "N/A"}</td>
-
-    <td>${app.patient_id || "N/A"}</td>
-
-    <td>${app.mode || "N/A"}</td>
-
-    <td>${new Date(app.date).toLocaleDateString()}</td>
-
-    <td>${app.time || "N/A"}</td>
-
-    <td>
-
-    <span class="status-badge status-${app.payment_status?.toLowerCase()}">
-
-    ${app.payment_status || "N/A"}
-
-    </span>
-
-    </td>
-
-    </tr>
-
-    `;
-
-    tableBody.innerHTML += row;
-
+      reader.readAsDataURL(e.target.files[0]);
     });
 
-    }else{
+    // ========================================
+    // WALLET & EARNINGS MANAGEMENT
+    // ========================================
 
-    tableBody.innerHTML=`<tr><td colspan="7" style="text-align:center">No appointments</td></tr>`;
+    /**
+     * Load doctor's wallet balance and transaction history
+     * Displays earnings from completed consultations
+     */
+    async function loadDoctorWallet() {
+      try {
+        // Fetch wallet data from API
+        const res = await fetch(`${API_BASE}/doctor/wallet/${doctorUid}`);
+        const data = await res.json();
 
+        // Update balance display
+        document.getElementById("doctorWallet").innerText = data.wallet || 0;
+
+        const table = document.getElementById("walletTableBody");
+        table.innerHTML = "";
+
+        // Show message if no transactions
+        if (!data.transactions || data.transactions.length === 0) {
+          table.innerHTML = `
+            <tr>
+              <td colspan="8" style="text-align:center">No earnings yet</td>
+            </tr>
+          `;
+          return;
+        }
+
+        // Populate transaction history
+        data.transactions.forEach(tx => {
+          const row = `
+            <tr>
+              <td>${tx.appointment_uid}</td>
+              <td>${tx.patient_name}</td>
+              <td>${tx.patient_email}</td>
+              <td>${new Date(tx.appointment_date).toLocaleDateString()}</td>
+              <td>${tx.appointment_time}</td>
+              <td>${tx.payment_id}</td>
+              <td style="color:#28A745">₹${tx.amount}</td>
+              <td>${tx.admin_status || "Pending"}</td>
+            </tr>
+          `;
+          table.innerHTML += row;
+        });
+      } catch (err) {
+        console.error("Wallet loading error:", err);
+      }
     }
 
-    }catch(err){
+    /**
+     * Show consultation content when consultation button is clicked
+     */
+    document.getElementById("consultationBtn").addEventListener("click", () => {
+      // Hide all sections
+      document.querySelectorAll(".section").forEach(sec => {
+        sec.style.display = "none";
+      });
 
-    tableBody.innerHTML=`<tr><td colspan="7">Error loading</td></tr>`;
-
-    }
-
-    }
-
-    /* -----------------------------
-      WALLET
-    ----------------------------- */
-
-    async function loadDoctorWallet(){
-
-    try{
-
-    const res = await fetch(`${API_BASE}/doctor/wallet/${doctorUid}`);
-
-    const data = await res.json();
-
-    document.getElementById("doctorWallet").innerText = data.wallet || 0;
-
-    const table = document.getElementById("walletTableBody");
-
-    table.innerHTML="";
-
-    if(!data.transactions || data.transactions.length===0){
-
-    table.innerHTML = `<tr><td colspan="7" style="text-align:center">No earnings yet</td></tr>`;
-
-    return;
-
-    }
-
-    data.transactions.forEach(tx=>{
-
-    const row = `
-
-    <tr>
-
-    <td>${tx.appointment_uid}</td>
-
-    <td>${tx.patient_name}</td>
-
-    <td>${tx.patient_email}</td>
-
-    <td>${new Date(tx.appointment_date).toLocaleDateString()}</td>
-
-    <td>${tx.appointment_time}</td>
-
-    <td>${tx.payment_id}</td>
-
-    <td style="color:#28A745;font-weight:600;">₹${tx.amount}</td>
-
-    </tr>
-
-    `;
-
-    table.innerHTML += row;
-
+      // Show consultation section
+      document.getElementById("consultationContent").style.display = "block";
     });
 
-    }catch(err){
+    // ========================================
+    // AUTHENTICATION & LOGOUT
+    // ========================================
 
-    console.error("Wallet error",err);
+    /**
+     * Log out the doctor and clear session
+     * Redirects to login page
+     */
+    function logout() {
+      if (!doctorUid) {
+        window.location.href = "login.html";
+        return;
+      }
 
+      // Notify backend - set doctor offline
+      fetch(`${API_BASE}/doctor-logout`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ uid: doctorUid })
+      })
+        .then(() => {
+          // Clear local storage and redirect
+          localStorage.clear();
+          window.location.href = "login.html";
+        })
+        .catch(() => {
+          // Even if API fails, clear session locally
+          localStorage.clear();
+          window.location.href = "login.html";
+        });
     }
 
-    }
+    // ========================================
+    // PAGE INITIALIZATION
+    // ========================================
 
-    /* -----------------------------
-      LOGOUT
-    ----------------------------- */
-
-function logout(){
-
-  const doctorUid = localStorage.getItem("doctorUid");
-
-  if(!doctorUid){
-  window.location.href="login.html";
-  return;
-  }
-
-  /* SET DOCTOR OFFLINE */
-
-  fetch(`${API_BASE}/doctor-logout`,{
-  method:"POST",
-  headers:{
-  "Content-Type":"application/json"
-  },
-  body: JSON.stringify({
-  uid: doctorUid
-  })
-  })
-  .then(()=>{
-
-  console.log("Doctor offline");
-
-  localStorage.clear();
-
-  window.location.href="login.html";
-
-  })
-  .catch(err=>{
-
-  console.error("Logout error",err);
-
-  localStorage.clear();
-
-  window.location.href="login.html";
-
-  });
-
-}
-
-  socket.on("incoming-consult",data=>{
-
-  const banner = document.createElement("div");
-
-  banner.className="call-invitation-banner";
-
-  banner.innerHTML = `
-  <p>Patient waiting for instant consultation</p>
-
-  <div class="btn-group">
-
-  <button class="btn join-btn"
-  onclick="joinCall('${data.roomId}')">
-
-  Join Call
-
-  </button>
-
-  </div>
-  `;
-
-  document.getElementById("call-invitation-container")
-  .appendChild(banner);
-
-  });
-
-  function joinCall(roomId){
-
-    window.location.href =
-    "meet.html?roomId="+roomId;
-
-  }
-
-    /* -----------------------------
-      START
-    ----------------------------- */
-
+    // Initialize profile when DOM is fully loaded
     document.addEventListener("DOMContentLoaded", initializeProfile);
-
   </script>
 
 </body>

@@ -6,6 +6,7 @@
 <title>Doctor Appointment Payment</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.min.js"></script>
 
 <style>
 * {
@@ -353,109 +354,129 @@ h3 {
 </div>
 
 <script>
+
+const socket = io("https://24x7health.in", {
+    transports:["websocket","polling"]
+});
+
 let selectedMethod = null;
 let appointmentData = null;
 
 document.addEventListener("DOMContentLoaded", function(){
-    const data = sessionStorage.getItem("appointmentPaymentData");
 
-    if(!data){
-        alert("No appointment found.");
-        window.location.href="doctors.html";
-        return;
-    }
+const data = sessionStorage.getItem("appointmentPaymentData");
 
-    appointmentData = JSON.parse(data);
+if(!data){
+    alert("No appointment found.");
+    window.location.href="doctors.html";
+    return;
+}
 
-    document.getElementById("appointmentDetails").innerHTML = `
-        <h3><i class="fas fa-user-md" style="color: #667eea; margin-right: 8px;"></i> ${appointmentData.doctorName}</h3>
-        <p><i class="fas fa-stethoscope" style="color: #667eea; width: 20px;"></i> <strong>Specialization:</strong> ${appointmentData.specialization}</p>
-        <p><i class="fas fa-calendar-alt" style="color: #667eea; width: 20px;"></i> <strong>Date:</strong> ${appointmentData.appointmentDate}</p>
-        <p><i class="fas fa-clock" style="color: #667eea; width: 20px;"></i> <strong>Time:</strong> ${appointmentData.appointmentTime}</p>
+appointmentData = JSON.parse(data);
 
-        <div class="amount-box">
-            <p><i class="fas fa-tag"></i> Consultation Fee: ₹${appointmentData.consultationFee}</p>
-            <p><i class="fas fa-percent"></i> Discount: -₹${appointmentData.discount}</p>
-            <h3><i class="fas fa-rupee-sign"></i> Final Amount: ₹${appointmentData.finalAmount}</h3>
-        </div>
-    `;
+document.getElementById("appointmentDetails").innerHTML = `
+<h3>${appointmentData.doctorName}</h3>
+<p><strong>Specialization:</strong> ${appointmentData.specialization}</p>
+<p><strong>Date:</strong> ${appointmentData.appointmentDate}</p>
+<p><strong>Time:</strong> ${appointmentData.appointmentTime}</p>
+
+<div class="amount-box">
+<p>Consultation Fee: ₹${appointmentData.consultationFee}</p>
+<p>Discount: -₹${appointmentData.discount}</p>
+<h3>Final Amount: ₹${appointmentData.finalAmount}</h3>
+</div>
+`;
+
 });
 
-function selectMethod(method){
-    selectedMethod = method;
-    document.querySelectorAll(".option").forEach(o=>o.classList.remove("active"));
-    document.getElementById(method).classList.add("active");
 
-    if(method==="qr"){
-        document.getElementById("qrBox").style.display="block";
-    }else{
-        document.getElementById("qrBox").style.display="none";
-    }
+function selectMethod(method){
+
+selectedMethod = method;
+
+document.querySelectorAll(".option")
+.forEach(o=>o.classList.remove("active"));
+
+document.getElementById(method).classList.add("active");
+
+if(method==="qr"){
+document.getElementById("qrBox").style.display="block";
+}else{
+document.getElementById("qrBox").style.display="none";
 }
+
+}
+
+
 
 async function makePayment(){
 
-    if(!selectedMethod){
-        alert("Please select payment method.");
-        return;
-    }
-
-    // Add loading state to button
-    const payBtn = document.querySelector('.pay-btn');
-    payBtn.classList.add('loading');
-    payBtn.innerHTML = '<i class="fas fa-spinner"></i> Processing...';
-
-    try{
-        const response = await fetch('/api/payment/simulate',{
-            method:'POST',
-            headers:{'Content-Type':'application/json'},
-            body:JSON.stringify({
-                appointmentId: appointmentData.appointmentId,
-                method:selectedMethod
-            })
-        });
-
-        const data = await response.json();
-
-        if(response.ok && data.success){
-            alert("Payment Successful! Appointment Confirmed.");
-            sessionStorage.removeItem("appointmentPaymentData");
-            window.location.href="doctors.html";
-        }else{
-            alert("Payment Failed.");
-            payBtn.classList.remove('loading');
-            payBtn.innerHTML = '<i class="fas fa-lock"></i> Pay & Confirm Appointment';
-        }
-
-    }catch(err){
-        alert("Server error.");
-        payBtn.classList.remove('loading');
-        payBtn.innerHTML = '<i class="fas fa-lock"></i> Pay & Confirm Appointment';
-    }
+if(!selectedMethod){
+alert("Please select payment method.");
+return;
 }
 
-    function makePayment(){
+const payBtn = document.querySelector(".pay-btn");
 
-    const payBtn = document.querySelector(".pay-btn");
+payBtn.classList.add("loading");
+payBtn.innerHTML="<i class='fas fa-spinner'></i> Processing...";
 
-    payBtn.classList.add("loading");
-    payBtn.innerHTML = "<i class='fas fa-spinner'></i> Processing...";
+try{
 
-    setTimeout(()=>{
+const response = await fetch('/api/payment/simulate',{
+method:'POST',
+headers:{'Content-Type':'application/json'},
+body:JSON.stringify({
+appointmentId: appointmentData.appointmentId,
+method:selectedMethod
+})
+});
 
-    alert("Payment Successful");
+const result = await response.json();
 
-    const roomId = "room_"+Date.now();
+if(!result.success){
+alert("Payment failed");
+return;
+}
 
-    sessionStorage.setItem("roomId",roomId);
+/* PAYMENT SUCCESS */
 
-    window.location.href =
-    "meet.html?roomId="+roomId+
-    "&doctorUid="+appointmentData.doctorUid;
+alert("Payment Successful");
 
-    },2000);
+const roomId = "room_"+Date.now();
 
-    }
+sessionStorage.setItem("roomId",roomId);
+
+/* Notify doctor */
+
+socket.emit("join-call-room",{
+roomId:roomId,
+doctorUid:appointmentData.doctorUid,
+patientId:appointmentData.patientId,
+patientName:appointmentData.patientName
+});
+
+/* Redirect to video */
+
+setTimeout(()=>{
+
+window.location.href=
+"meet.html?roomId="+roomId+
+"&doctorUid="+appointmentData.doctorUid;
+
+},500);
+
+
+}catch(err){
+
+alert("Server error");
+
+payBtn.classList.remove("loading");
+payBtn.innerHTML="Pay & Confirm Appointment";
+
+}
+
+}
 
 </script>
 
