@@ -1257,6 +1257,40 @@ function logout(){
   });
 
 }
+
+  socket.on("incoming-consult",data=>{
+
+  const banner = document.createElement("div");
+
+  banner.className="call-invitation-banner";
+
+  banner.innerHTML = `
+  <p>Patient waiting for instant consultation</p>
+
+  <div class="btn-group">
+
+  <button class="btn join-btn"
+  onclick="joinCall('${data.roomId}')">
+
+  Join Call
+
+  </button>
+
+  </div>
+  `;
+
+  document.getElementById("call-invitation-container")
+  .appendChild(banner);
+
+  });
+
+  function joinCall(roomId){
+
+    window.location.href =
+    "meet.html?roomId="+roomId;
+
+  }
+
     /* -----------------------------
       START
     ----------------------------- */

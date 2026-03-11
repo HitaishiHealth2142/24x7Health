@@ -107,7 +107,7 @@ Instant Video Consultation
 const socket = io("https://24x7health.in");
 
 const patientName = localStorage.getItem("fullName");
-const patientId = localStorage.getItem("unique_id");
+const patientId = localStorage.getItem("uniqueId");
 
 if(!patientName){
 alert("Please login as patient first");
@@ -203,11 +203,10 @@ ${doc.area || ""}, ${doc.city || ""}
 
 </div>
 
-<button class="join-btn"
-onclick="startConsult('${doc.uid}')">
+<button class="join-btn" onclick="startConsult('${doc.uid}','${doc.first_name} ${doc.last_name}','${doc.consultation_fee}')">
 
-<i class="fas fa-video"></i>
-Join Video
+    <i class="fas fa-video"></i>
+    Join Video
 
 </button>
 
@@ -232,7 +231,7 @@ document.getElementById("doctorList")
 START CONSULTATION
 --------------------------*/
 
-function startConsult(doctorUid){
+function startConsult(doctorUid,doctorName,fee){
 
 if(!patientId){
 alert("Please login first");
@@ -240,18 +239,23 @@ window.location.href="login.html";
 return;
 }
 
-const roomId="room_"+Date.now();
+const appointmentData = {
 
-socket.emit("join-call-room",{
+doctorUid: doctorUid,
+doctorName: doctorName,
+fee: fee,
+patientId: patientId,
+patientName: patientName,
+type: "instant"
 
-roomId:roomId,
-doctorUid:doctorUid,
-patientId:patientId,
-patientName:patientName
+};
 
-});
+sessionStorage.setItem(
+"appointmentPaymentData",
+JSON.stringify(appointmentData)
+);
 
-window.location.href="meet.html?roomId="+roomId;
+window.location.href="doctorAppointmentPayment.html";
 
 }
 

@@ -433,6 +433,30 @@ async function makePayment(){
         payBtn.innerHTML = '<i class="fas fa-lock"></i> Pay & Confirm Appointment';
     }
 }
+
+    function makePayment(){
+
+    const payBtn = document.querySelector(".pay-btn");
+
+    payBtn.classList.add("loading");
+    payBtn.innerHTML = "<i class='fas fa-spinner'></i> Processing...";
+
+    setTimeout(()=>{
+
+    alert("Payment Successful");
+
+    const roomId = "room_"+Date.now();
+
+    sessionStorage.setItem("roomId",roomId);
+
+    window.location.href =
+    "meet.html?roomId="+roomId+
+    "&doctorUid="+appointmentData.doctorUid;
+
+    },2000);
+
+    }
+
 </script>
 
 </body>
