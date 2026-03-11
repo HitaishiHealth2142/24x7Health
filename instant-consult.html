@@ -1,346 +1,275 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Instant Video Consultation · 24x7Health</title>
-  <!-- Socket.io (kept fully functional) -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.min.js"></script>
-  
-  <!-- Google Font & subtle icons (purely decorative, no functionality impact) -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-  
-  <style>
-    /* === EXCELLENT MODERN STYLING — untouched functionality === */
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    body {
-      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
-      background: linear-gradient(145deg, #f0f4f8 0%, #e6ecf3 100%);
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 2rem 1.5rem;
-      margin: 0;
-      line-height: 1.5;
-    }
+<title>Instant Video Consultation · 24x7Health</title>
 
-    .container {
-      max-width: 1000px;
-      width: 100%;
-      margin: 0 auto;
-    }
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.min.js"></script>
 
-    h1 {
-      text-align: center;
-      margin-bottom: 2.2rem;
-      font-weight: 700;
-      font-size: 2.3rem;
-      letter-spacing: -0.02em;
-      background: linear-gradient(135deg, #0b2b44, #1b4a6b);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 12px;
-    }
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 
-    h1 i {
-      background: #fff;
-      padding: 12px;
-      border-radius: 50%;
-      box-shadow: 0 15px 25px -8px rgba(0,80,120,0.25);
-      color: #1e5f86;
-      font-size: 1.5rem;
-      -webkit-text-fill-color: #1e5f86; /* overrides gradient for icon */
-      background: white;
-    }
+<style>
 
-    /* doctor list container */
-    #doctorList {
-      display: flex;
-      flex-direction: column;
-      gap: 18px;
-    }
+body{
+font-family: Inter;
+background: linear-gradient(145deg,#f0f4f8,#e6ecf3);
+padding:40px;
+}
 
-    /* loading / info / error states with nice card style */
-    #doctorList p {
-      background: white;
-      border-radius: 28px;
-      padding: 2.2rem;
-      text-align: center;
-      font-size: 1.2rem;
-      color: #2c3e50;
-      box-shadow: 0 18px 35px -10px rgba(0,45,70,0.12);
-      font-weight: 500;
-      border: 1px solid rgba(255,255,255,0.5);
-      backdrop-filter: blur(4px);
-    }
+.container{
+max-width:1000px;
+margin:auto;
+}
 
-    /* doctor card — elegant, airy, refined */
-    .doctor-card {
-      background: rgba(255,255,255,0.85);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      border: 1px solid rgba(255,255,255,0.5);
-      box-shadow: 0 20px 35px -8px rgba(20, 60, 100, 0.2), 0 0 0 1px rgba(255,255,255,0.5) inset;
-      border-radius: 32px;
-      padding: 22px 28px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      transition: all 0.3s ease;
-    }
+h1{
+text-align:center;
+margin-bottom:30px;
+}
 
-    .doctor-card:hover {
-      background: rgba(255,255,255,0.95);
-      box-shadow: 0 28px 40px -12px rgba(15, 80, 120, 0.3);
-      transform: scale(1.01) translateY(-2px);
-    }
+#doctorList{
+display:flex;
+flex-direction:column;
+gap:20px;
+}
 
-    .doctor-info {
-      display: flex;
-      align-items: center;
-      gap: 22px;
-    }
+.doctor-card{
+display:flex;
+justify-content:space-between;
+align-items:center;
+background:white;
+padding:20px;
+border-radius:20px;
+box-shadow:0 10px 25px rgba(0,0,0,0.1);
+}
 
-    .doctor-img {
-      width: 80px;
-      height: 80px;
-      border-radius: 50%;
-      object-fit: cover;
-      border: 3px solid white;
-      box-shadow: 0 12px 18px -8px rgba(0,70,100,0.2);
-      transition: 0.2s;
-      background: #eef2f6;
-    }
+.doctor-info{
+display:flex;
+gap:20px;
+align-items:center;
+}
 
-    .doctor-card:hover .doctor-img {
-      border-color: #c0e1ff;
-    }
+.doctor-img{
+width:70px;
+height:70px;
+border-radius:50%;
+object-fit:cover;
+}
 
-    .doctor-info h3 {
-      font-size: 1.5rem;
-      font-weight: 700;
-      color: #0d2f44;
-      margin-bottom: 6px;
-      letter-spacing: -0.01em;
-    }
+.join-btn{
+background:#1e7b4b;
+color:white;
+border:none;
+padding:12px 25px;
+border-radius:30px;
+cursor:pointer;
+font-weight:600;
+}
 
-    .doctor-info p {
-      font-size: 1rem;
-      color: #4b6379;
-      margin-bottom: 8px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-weight: 500;
-    }
+.status{
+background:#e2f5e9;
+color:#0f6e3f;
+padding:4px 12px;
+border-radius:20px;
+font-size:12px;
+}
 
-    .doctor-info p i {
-      color: #2f86b3;
-      font-size: 0.9rem;
-      width: 18px;
-    }
+#specializationFilter{
+padding:10px;
+border-radius:8px;
+margin-bottom:20px;
+}
 
-    .status {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      background: #e2f5e9;
-      color: #0f6e3f;
-      font-weight: 600;
-      font-size: 0.9rem;
-      padding: 6px 16px 6px 12px;
-      border-radius: 50px;
-      border: 1px solid rgba(40,167,100,0.3);
-      box-shadow: 0 2px 6px rgba(0,80,20,0.1);
-      letter-spacing: 0.01em;
-    }
-
-    .status::before {
-      content: "●";
-      font-size: 1.2rem;
-      color: #28a745;
-      filter: drop-shadow(0 0 4px #5fda8b);
-    }
-
-    /* join button — elevated, friendly */
-    .join-btn {
-      background: linear-gradient(145deg, #1e7b4b, #239954);
-      border: none;
-      padding: 14px 34px;
-      border-radius: 50px;
-      color: white;
-      font-weight: 600;
-      font-size: 1.1rem;
-      letter-spacing: 0.01em;
-      cursor: pointer;
-      box-shadow: 0 12px 18px -8px rgba(30, 100, 60, 0.4), 0 0 0 1px rgba(255,255,255,0.2) inset;
-      transition: all 0.2s ease;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      border: 1px solid rgba(255,255,255,0.3);
-      backdrop-filter: blur(4px);
-    }
-
-    .join-btn i {
-      font-size: 1.2rem;
-      color: rgba(255,255,255,0.9);
-    }
-
-    .join-btn:hover {
-      background: linear-gradient(145deg, #239954, #2bb86b);
-      box-shadow: 0 18px 25px -8px #1c7847;
-      transform: scale(1.03);
-      border-color: rgba(255,255,255,0.5);
-    }
-
-    .join-btn:active {
-      transform: scale(0.98);
-      box-shadow: 0 6px 12px -4px #145c36;
-    }
-
-    /* empty state improvements */
-    #doctorList p:contains("No doctors") {
-      background: white url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="%2390a4b9" stroke-width="1.2"><circle cx="12" cy="8" r="4"/><path d="M5 20v-2a7 7 0 0 1 14 0v2"/></svg>') no-repeat center 2rem;
-      background-size: 48px;
-      padding-top: 6rem;
-    }
-
-    /* subtle responsive touches */
-    @media (max-width: 700px) {
-      body { padding: 1rem; }
-      h1 { font-size: 1.8rem; }
-      .doctor-card {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 20px;
-        padding: 22px;
-      }
-      .doctor-info { width: 100%; }
-      .join-btn { width: 100%; justify-content: center; }
-      .doctor-img { width: 70px; height: 70px; }
-    }
-
-    @media (max-width: 420px) {
-      .doctor-info { flex-wrap: wrap; gap: 12px; }
-    }
-
-    /* tiny extra shine: decorative elements (no script overlap) */
-    .container::after {
-      content: "";
-      display: block;
-      height: 4px;
-      width: 120px;
-      background: linear-gradient(90deg, #7fc9ff, #2b8fcc, #7fc9ff);
-      margin: 40px auto 0;
-      border-radius: 4px;
-      opacity: 0.4;
-    }
-
-    /* keep all original script behaviour untouched */
-    /* (no styling changes to any id/class used in js) */
-  </style>
+</style>
 </head>
+
 <body>
+
 <div class="container">
-  <h1>
-    <i class="fas fa-video"></i> 
-    Instant Video Consultation
-  </h1>
-  <!-- doctor list element – ID unchanged, fully functional -->
-  <div id="doctorList">Loading doctors...</div>
+
+<h1>
+<i class="fas fa-video"></i>
+Instant Video Consultation
+</h1>
+
+<select id="specializationFilter">
+<option value="">All Specializations</option>
+</select>
+
+<div id="doctorList">Loading doctors...</div>
+
 </div>
 
 <script>
-  // ---------- ORIGINAL SCRIPT (fully intact, only stylings changed) ----------
-  const socket = io("https://24x7health.in");
 
-  const patientName = localStorage.getItem("fullName") || "Patient";
-  const patientId = localStorage.getItem("patientId");
+const socket = io("https://24x7health.in");
 
-  /* ------------------------------
-  LOAD ONLINE DOCTORS (exactly same)
-  ------------------------------- */
-  async function loadOnlineDoctors(){
-    try{
-      const res = await fetch("/api/online-doctors");
-      const doctors = await res.json();
-      const container = document.getElementById("doctorList");
+const patientName = localStorage.getItem("fullName");
+const patientId = localStorage.getItem("unique_id");
 
-      if(!doctors || doctors.length===0){
-        container.innerHTML = "<p>No doctors available right now.</p>";
-        return;
-      }
+if(!patientName){
+alert("Please login as patient first");
+window.location.href="login.html";
+}
 
-      container.innerHTML="";
+/* -------------------------
+LOAD SPECIALIZATIONS
+--------------------------*/
 
-      doctors.forEach(doc=>{
-        const card = document.createElement("div");
-        card.className="doctor-card";
+async function loadSpecializations(){
 
-        // using backticks – exactly same structure, but enriched with minor icon spans (no functional change, just visual)
-        // NOTE: added <i> for better ux, but doesn't affect any JS logic.
-        card.innerHTML = `
-          <div class="doctor-info">
-            <img src="${doc.profile_image_url || 'https://placehold.co/60'}" class="doctor-img" alt="Dr. ${doc.first_name}">
-            <div>
-              <h3>Dr. ${doc.first_name} ${doc.last_name}</h3>
-              <p><i class="fas fa-stethoscope"></i> ${doc.specialization || 'General physician'}</p>
-              <span class="status">Available Now</span>
-            </div>
-          </div>
-          <button class="join-btn" onclick="startConsult('${doc.uid}')">
-            <i class="fas fa-phone-alt"></i> Join Video
-          </button>
-        `;
-        container.appendChild(card);
-      });
-    }catch(err){
-      console.error(err);
-      document.getElementById("doctorList").innerHTML="<p>Failed to load doctors. Check connection.</p>";
-    }
-  }
+const res = await fetch("/api/specializations");
+const specs = await res.json();
 
-  /* ------------------------------
-  START CONSULTATION (original)
-  ------------------------------- */
-  function startConsult(doctorUid){
-    if(!patientId){
-      alert("Please login as patient");
-      window.location.href="login.html";
-      return;
-    }
+const filter = document.getElementById("specializationFilter");
 
-    const roomId = "room_" + Date.now();
-    socket.emit("join-call-room",{
-      roomId: roomId,
-      doctorUid: doctorUid,
-      patientId: patientId,
-      patientName: patientName
-    });
+specs.forEach(spec=>{
 
-    window.location.href = "meet.html?roomId=" + roomId;
-  }
+const opt=document.createElement("option");
+opt.value=spec;
+opt.textContent=spec;
 
-  /* ------------------------------
-  INIT (original)
-  ------------------------------- */
-  loadOnlineDoctors();
+filter.appendChild(opt);
+
+});
+
+}
+
+/* -------------------------
+LOAD DOCTORS
+--------------------------*/
+
+async function loadOnlineDoctors(){
+
+try{
+
+const specialization =
+document.getElementById("specializationFilter").value;
+
+let url="/api/online-doctors";
+
+if(specialization){
+url += "?specialization="+specialization;
+}
+
+const res = await fetch(url);
+const doctors = await res.json();
+
+const container = document.getElementById("doctorList");
+
+if(!doctors || doctors.length===0){
+container.innerHTML="<p>No doctors available right now.</p>";
+return;
+}
+
+container.innerHTML="";
+
+doctors.forEach(doc=>{
+
+const card=document.createElement("div");
+card.className="doctor-card";
+
+card.innerHTML=`
+
+<div class="doctor-info">
+
+<img class="doctor-img"
+src="${doc.profile_image_url || 'https://placehold.co/100'}">
+
+<div>
+
+<h3>Dr ${doc.first_name} ${doc.last_name}</h3>
+
+<p>
+<i class="fas fa-stethoscope"></i>
+${doc.specialization || "General Physician"}
+</p>
+
+<p>
+<i class="fas fa-map-marker-alt"></i>
+${doc.area || ""}, ${doc.city || ""}
+</p>
+
+<p>
+<i class="fas fa-money-bill"></i>
+₹${doc.consultation_fee || 500}
+</p>
+
+<span class="status">Online</span>
+
+</div>
+
+</div>
+
+<button class="join-btn"
+onclick="startConsult('${doc.uid}')">
+
+<i class="fas fa-video"></i>
+Join Video
+
+</button>
+
+`;
+
+container.appendChild(card);
+
+});
+
+}catch(err){
+
+console.error(err);
+
+document.getElementById("doctorList")
+.innerHTML="<p>Failed to load doctors</p>";
+
+}
+
+}
+
+/* -------------------------
+START CONSULTATION
+--------------------------*/
+
+function startConsult(doctorUid){
+
+if(!patientId){
+alert("Please login first");
+window.location.href="login.html";
+return;
+}
+
+const roomId="room_"+Date.now();
+
+socket.emit("join-call-room",{
+
+roomId:roomId,
+doctorUid:doctorUid,
+patientId:patientId,
+patientName:patientName
+
+});
+
+window.location.href="meet.html?roomId="+roomId;
+
+}
+
+/* -------------------------
+EVENTS
+--------------------------*/
+
+document.getElementById("specializationFilter")
+.addEventListener("change",loadOnlineDoctors);
+
+/* -------------------------
+INIT
+--------------------------*/
+
+loadSpecializations();
+loadOnlineDoctors();
+
 </script>
 
-<!-- No extra script, only styling enhancements. All original functionality preserved. -->
 </body>
 </html>

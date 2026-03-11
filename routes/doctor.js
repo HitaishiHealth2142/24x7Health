@@ -225,15 +225,24 @@ router.post("/doctorlogin", (req, res) => {
 // Get Online Doctors for Instant Consultation (new endpoint)
 router.get("/online-doctors",(req,res)=>{
 
-const sql = `
-SELECT uid, first_name, last_name, specialization,
-consultation_fee, profile_image_url
+const { specialization } = req.query;
+
+let sql = `
+SELECT uid,first_name,last_name,specialization,
+consultation_fee,profile_image_url,area,city
 FROM doctors
 WHERE is_online = 1
 AND instant_consultation = TRUE
 `;
 
-db.query(sql,(err,results)=>{
+const params = [];
+
+if(specialization){
+sql += " AND specialization = ?";
+params.push(specialization);
+}
+
+db.query(sql,params,(err,results)=>{
 if(err) return res.status(500).json({error:"db error"});
 res.json(results);
 });
