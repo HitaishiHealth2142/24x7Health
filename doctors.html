@@ -1901,8 +1901,8 @@
         slotContainer.innerHTML = '';
         selectedSlot = null;
 
-        const start = fromTime ? new Date(`1970-01-01T${fromTime}`) : null;
-        const end = toTime ? new Date(`1970-01-01T${toTime}`) : null;
+        const start = fromTime ? new Date(`1970-01-01T${fromTime.substring(0,5)}:00`) : null;
+        const end = toTime ? new Date(`1970-01-01T${toTime.substring(0,5)}:00`) : null;
 
         if (!start || !end || isNaN(start) || isNaN(end)) {
             slotContainer.innerHTML = `<p style="color: red;">Doctor's timings are not available.</p>`;
@@ -1993,41 +1993,41 @@
         const data = await response.json();
         if (!response.ok) throw new Error(data.message || 'Booking failed.');
 
-        // // appointment created with payment pending; show payment box
-        // lastCreatedAppointmentId = data.appointmentId;
-        // bookingMessageDiv.className = 'success';
-        // bookingMessageDiv.textContent = 'Appointment created. Please complete payment below to confirm.';
-
-        // const paymentBox = document.getElementById('paymentBox');
-        // paymentBox.style.display = 'block';
-        // paymentBox.innerHTML = `<p>Consultation Fee: ₹500</p>
-        //                         <p>Discount (30%): -₹150</p>
-        //                         <h3>Final Amount: ₹350</h3>
-        //                         <button id="payBtn" class="submit-btn">Pay ₹350 & Confirm</button>`;
-
-        // const payBtn = document.getElementById('payBtn');
-        // payBtn.onclick = async () => { payBtn.disabled = true; payBtn.innerHTML = '<span class="loading"></span> Processing...'; await makePayment(); };
-
-        // // hide the book button
-        // bookBtn.style.display = 'none';
-
-        // Appointment created successfully → redirect to payment page
+        const fee = selectedDoctor.consultation_fee || selectedDoctor.fee || 500;
+        const discount = Math.round(fee * 0.30);
+        const finalAmount = fee - discount;
 
         const paymentData = {
-            appointmentId: data.appointmentId,
-            doctorName: `Dr. ${selectedDoctor.first_name} ${selectedDoctor.last_name}`,
-            specialization: selectedDoctor.specialization,
-            appointmentDate: date,
-            appointmentTime: selectedSlot,
-            consultationFee: 500,
-            discount: 150,
-            finalAmount: 350
+
+        appointmentId: data.appointmentId,
+
+        doctorUid: selectedDoctor.uid,
+
+        doctorName: `Dr ${selectedDoctor.first_name} ${selectedDoctor.last_name}`,
+
+        patientName: patientInfo.firstName,
+
+        specialization: selectedDoctor.specialization || "General Physician",
+
+        appointmentDate: date,
+
+        appointmentTime: selectedSlot,
+
+        consultationFee: fee,
+
+        discount: discount,
+
+        finalAmount: finalAmount,
+
+        flowType: "scheduled"
+
         };
 
-        // Store payment details temporarily
-        sessionStorage.setItem("appointmentPaymentData", JSON.stringify(paymentData));
+        sessionStorage.setItem(
+        "appointmentPaymentData",
+        JSON.stringify(paymentData)
+        );
 
-        // Redirect to payment page
         window.location.href = "doctorAppointmentPayment.html";
 
     } catch (error) {

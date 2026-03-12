@@ -295,15 +295,44 @@ async function startConsult(doctorUid, doctorName, fee) {
         const result = await response.json();
 
         if (result.success) {
-            // Store the appointment data for payment flow
-            fullAppointmentData.appointmentId = result.appointmentId;
-            fullAppointmentData.flowType = "instant";
-            fullAppointmentData.doctorUid = doctorUid;
-            fullAppointmentData.original_fee = fee;
-            fullAppointmentData.final_amount = fee;
-            sessionStorage.setItem("pendingAppointment", JSON.stringify(fullAppointmentData));
-            
+
+            const consultationFee = parseInt(fee) || 500;
+
+            const discount = Math.round(consultationFee * 0.30);
+
+            const finalAmount = consultationFee - discount;
+
+            const paymentData = {
+
+                appointmentId: result.appointmentId,
+
+                doctorUid: doctorUid,
+
+                doctorName: "Dr " + doctorName,
+
+                specialization: doctor.specialization || "General Physician",
+
+                appointmentDate: currentDate,
+
+                appointmentTime: currentTime,
+
+                consultationFee: consultationFee,
+
+                discount: discount,
+
+                finalAmount: finalAmount,
+
+                flowType: "instant"
+
+            };
+
+            sessionStorage.setItem(
+                "appointmentPaymentData",
+                JSON.stringify(paymentData)
+            );
+
             window.location.href = "doctorAppointmentPayment.html";
+
         } else {
             alert("Unable to start consultation. Please try again.");
         }

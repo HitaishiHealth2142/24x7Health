@@ -377,15 +377,23 @@ return;
 appointmentData = JSON.parse(data);
 
 document.getElementById("appointmentDetails").innerHTML = `
-<h3>${appointmentData.doctorName}</h3>
-<p><strong>Specialization:</strong> ${appointmentData.specialization}</p>
+
+<h3>${appointmentData.doctorName || ""}</h3>
+
+<p><strong>Specialization:</strong> ${appointmentData.specialization || "General Physician"}</p>
+
 <p><strong>Date:</strong> ${appointmentData.appointmentDate}</p>
+
 <p><strong>Time:</strong> ${appointmentData.appointmentTime}</p>
 
 <div class="amount-box">
-<p>Consultation Fee: ₹${appointmentData.consultationFee}</p>
-<p>Discount: -₹${appointmentData.discount}</p>
-<h3>Final Amount: ₹${appointmentData.finalAmount}</h3>
+
+<p>Consultation Fee: ₹${appointmentData.consultationFee || 0}</p>
+
+<p>Discount: -₹${appointmentData.discount || 0}</p>
+
+<h3>Final Amount: ₹${appointmentData.finalAmount || 0}</h3>
+
 </div>
 `;
 
