@@ -724,27 +724,28 @@
             const buttonContainer = apptElement.querySelector('.flex.justify-end');
 
 
-            // If appointment time is available and <= now -> past appointment
+            // Add Join Meet button for all appointments
+            const joinBtn = document.createElement('button');
+            joinBtn.innerText = 'Join Meet';
+            joinBtn.className = 'px-4 py-1 rounded-md text-sm font-medium bg-indigo-600 text-white hover:bg-indigo-700 transition-colors';
+            joinBtn.onclick = () => joinMeeting(appt.appointment_uid, appt.doctor_uid);
+            buttonContainer.appendChild(joinBtn);
+
+            // If appointment is past and not reviewed, also add review button
             if (apptDateObj && apptDateObj.getTime() <= now.getTime()) {
-            if (!hasBeenReviewed) {
-            const rateBtn = document.createElement('button');
-            rateBtn.innerText = 'Review';
-            rateBtn.className = 'rate-btn px-4 py-1 rounded-md text-sm font-medium bg-green-100 text-green-700 hover:bg-green-200 transition-colors';
-            rateBtn.setAttribute('data-type', 'doctor');
-            rateBtn.setAttribute('data-appt', JSON.stringify(appt));
-            buttonContainer.appendChild(rateBtn);
-            } else {
-            const reviewedText = document.createElement('p');
-            reviewedText.innerText = 'Reviewed';
-            reviewedText.className = 'text-sm text-gray-500 font-medium';
-            buttonContainer.appendChild(reviewedText);
-            }
-            } else {
-                // const rescheduleBtn = document.createElement('button');
-                // rescheduleBtn.innerText = 'Reschedule';
-                // rescheduleBtn.className = 'reschedule-btn px-4 py-1 rounded-md text-sm font-medium bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors';
-                // rescheduleBtn.onclick = () => alert('Doctor appointment rescheduling coming soon!');
-                // buttonContainer.appendChild(rescheduleBtn);
+                if (!hasBeenReviewed) {
+                    const rateBtn = document.createElement('button');
+                    rateBtn.innerText = 'Review';
+                    rateBtn.className = 'rate-btn px-4 py-1 rounded-md text-sm font-medium bg-green-100 text-green-700 hover:bg-green-200 transition-colors';
+                    rateBtn.setAttribute('data-type', 'doctor');
+                    rateBtn.setAttribute('data-appt', JSON.stringify(appt));
+                    buttonContainer.appendChild(rateBtn);
+                } else {
+                    const reviewedText = document.createElement('p');
+                    reviewedText.innerText = 'Reviewed';
+                    reviewedText.className = 'text-sm text-gray-500 font-medium';
+                    buttonContainer.appendChild(reviewedText);
+                }
             }
 
 
@@ -888,6 +889,16 @@
                 else if (viewId === 'profile-view' || viewId === 'edit-profile-view') activeBtnId = 'show-profile-btn';
                 
                 if (activeBtnId) document.getElementById(activeBtnId).classList.add('active');
+            }
+
+            // --- Join Meeting Function ---
+            function joinMeeting(appointmentUid, doctorUid) {
+                const roomId = "apt_" + appointmentUid;
+                
+                // Store for meet page
+                sessionStorage.setItem("roomId", roomId);
+                
+                window.location.href = `meet.html?roomId=${roomId}&doctorUid=${doctorUid}`;
             }
 
             // --- 4. Event Listeners ---
