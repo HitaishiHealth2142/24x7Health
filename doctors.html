@@ -1931,12 +1931,17 @@
         }
         
         if (hasSlots) {
+            // remove old button
+            const oldBtn = document.getElementById('bookBtn');
+            if(oldBtn) oldBtn.remove();
+
             const submitBtn = document.createElement('button');
             submitBtn.id = 'bookBtn';
             submitBtn.className = 'submit-btn';
             submitBtn.textContent = 'Book Appointment';
             submitBtn.disabled = true;
             submitBtn.onclick = () => submitBooking(date); 
+
             slotContainer.after(submitBtn);
         } else {
             slotContainer.innerHTML = `<p>No available slots for this day.</p>`;
@@ -1953,12 +1958,13 @@
     bookingMessageDiv.style.display = 'none';
     
     const patientInfo = {
-        id: localStorage.getItem("patientId"),
+        id: localStorage.getItem("userId"),
         firstName: localStorage.getItem("fullName"),
         email: localStorage.getItem("email"),
         mobile: localStorage.getItem("mobile")
     };
-    if (!patientInfo) {
+
+    if (!localStorage.getItem("userId")) {
         showNotification("Please login to book an appointment.", 'info');
         setTimeout(() => window.location.href = 'login.html', 1500);
         return;
@@ -1966,14 +1972,15 @@
 
     if (!selectedSlot || !selectedDoctor) {
         bookingMessageDiv.className = 'error';
+        bookingMessageDiv.style.display = 'block';
         bookingMessageDiv.textContent = 'Please select a doctor and a time slot.';
         return;
     }
 
     const bookingDetails = {
-        patientId: patientInfo.id, patientName: `${patientInfo.firstName} ${patientInfo.lastName}`,
+        patientId: parseInt(patientInfo.id), patientName: patientInfo.firstName,
         patientEmail: patientInfo.email, patientMobile: patientInfo.mobile,
-        doctorId: selectedDoctor.id, doctorUid: selectedDoctor.uid,
+        doctorId: parseInt(selectedDoctor.id), doctorUid: selectedDoctor.uid,
         doctorName: `Dr. ${selectedDoctor.first_name} ${selectedDoctor.last_name}`,
         doctorEmail: selectedDoctor.email, doctorMobile: selectedDoctor.mobile,
         doctorSpecialization: selectedDoctor.specialization,
@@ -1983,6 +1990,7 @@
     const bookBtn = document.getElementById('bookBtn');
     bookBtn.disabled = true;
     bookBtn.innerHTML = '<span class="loading"></span> Creating appointment...';
+    console.log("Booking payload:", bookingDetails);
 
     try {
         const response = await fetch('/api/appointments', {

@@ -420,12 +420,14 @@ document.getElementById("qrBox").style.display="none";
 
 // Simulate payment process
 async function makePayment() {
+
     if (!selectedMethod) {
         alert("Please select payment method.");
         return;
     }
 
     try {
+
         const response = await fetch('/api/payment/simulate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -436,6 +438,7 @@ async function makePayment() {
         });
 
         const result = await response.json();
+
         if (!result.success) {
             alert("Payment failed");
             return;
@@ -443,29 +446,28 @@ async function makePayment() {
 
         alert("Payment Successful");
 
-        appointmentData = JSON.parse(sessionStorage.getItem("pendingAppointment"));
+        appointmentData =
+        JSON.parse(sessionStorage.getItem("appointmentPaymentData"));
 
         if (appointmentData.flowType === "instant") {
-            // FLOW: INSTANT CONSULT -> MEET.HTML
+
             const roomId = "apt_" + appointmentData.appointmentId;
+
             sessionStorage.setItem("roomId", roomId);
 
-            // Notify the doctor via Socket.IO
-            socket.emit("join-call-room", {
-                roomId: roomId,
-                doctorUid: appointmentData.doctor_uid,
-                patientId: appointmentData.patient_id,
-                patientName: appointmentData.patient_name
-            });
+            window.location.href =
+            `meet.html?roomId=${roomId}&doctorUid=${appointmentData.doctorUid}`;
 
-            window.location.href = `meet.html?roomId=${roomId}&doctorUid=${appointmentData.doctorUid}`;
         } else {
-            // FLOW: STANDARD APPOINTMENT -> PATIENTPROFILE.HTML
+
             window.location.href = "patientProfile.html";
+
         }
 
     } catch (err) {
+
         console.error("Payment error:", err);
+
     }
 }
 

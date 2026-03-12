@@ -278,7 +278,7 @@ async function startConsult(doctorUid, doctorName, fee) {
             doctorUid: doctorUid,
             doctorName: doctorName,
             doctorEmail: doctor.email,
-            doctorMobile: doctor.mobile,
+            doctorMobile: doctor.doctor_mobile || doctor.mobile,            
             doctorSpecialization: doctor.specialization,
 
             appointmentDate: currentDate,
