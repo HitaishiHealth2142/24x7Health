@@ -1952,7 +1952,12 @@
     const bookingMessageDiv = document.getElementById('bookingMessage');
     bookingMessageDiv.style.display = 'none';
     
-    const patientInfo = JSON.parse(sessionStorage.getItem('patientUser'));
+    const patientInfo = {
+        id: localStorage.getItem("patientId"),
+        firstName: localStorage.getItem("fullName"),
+        email: localStorage.getItem("email"),
+        mobile: localStorage.getItem("mobile")
+    };
     if (!patientInfo) {
         showNotification("Please login to book an appointment.", 'info');
         setTimeout(() => window.location.href = 'login.html', 1500);

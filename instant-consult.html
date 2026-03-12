@@ -106,8 +106,9 @@ Instant Video Consultation
 
 const socket = io("https://24x7health.in");
 
+const patientId = localStorage.getItem("userId");   // numeric id
+const patientUid = localStorage.getItem("uniqueId"); // string UID
 const patientName = localStorage.getItem("fullName");
-const patientId = localStorage.getItem("uniqueId");
 
 if(!patientName){
 alert("Please login as patient first");
@@ -231,32 +232,85 @@ document.getElementById("doctorList")
 START CONSULTATION
 --------------------------*/
 
-function startConsult(doctorUid,doctorName,fee){
+// In instant-consult.html
+async function startConsult(doctorUid, doctorName, fee) {
+    if (!patientId) {
+        alert("Please login first");
+        window.location.href = "login.html";
+        return;
+    }
 
-if(!patientId){
-alert("Please login first");
-window.location.href="login.html";
-return;
-}
+    // Get current date and time for the instant session
+    const now = new Date();
+    const currentDate = now.toISOString().split('T')[0]; 
+    const currentTime = now.toTimeString().split(' ')[0].substring(0, 5);
 
-const appointmentData = {
+    const appointmentData = {
+        doctor_uid: doctorUid,
+        doctor_name: doctorName,
+        patient_id: patientId,
+        patient_name: patientName,
+        appointment_date: currentDate,
+        appointment_time: currentTime,
+        original_fee: fee,
+        final_amount: fee,
+        status: 'Instant' // Mark as Instant to distinguish the flow
+    };
 
-doctorUid: doctorUid,
-doctorName: doctorName,
-fee: fee,
-patientId: patientId,
-patientName: patientName,
-type: "instant"
+    try {
+        // First, fetch doctor details to get required fields
+        const doctorResponse = await fetch(`/api/gdoctors/${doctorUid}`);
+        const doctor = await doctorResponse.json();
 
-};
+        // Get patient details from localStorage (assuming they are stored)
+        const patientEmail = localStorage.getItem("email") || "";
+        const patientMobile = localStorage.getItem("mobile") || "";
 
-sessionStorage.setItem(
-"appointmentPaymentData",
-JSON.stringify(appointmentData)
-);
+        const fullAppointmentData = {
 
-window.location.href="doctorAppointmentPayment.html";
+            patientId: parseInt(patientId),  // numeric for DB
+            patientUid: patientUid,
+            patientName: patientName,
+            patientEmail: patientEmail,
+            patientMobile: patientMobile,
 
+            doctorId: doctor.id,
+            doctorUid: doctorUid,
+            doctorName: doctorName,
+            doctorEmail: doctor.email,
+            doctorMobile: doctor.mobile,
+            doctorSpecialization: doctor.specialization,
+
+            appointmentDate: currentDate,
+            appointmentTime: currentTime
+        };
+
+        // Create the record in the database
+        const response = await fetch('/api/appointments', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(fullAppointmentData)
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            // Store the appointment data for payment flow
+            fullAppointmentData.appointmentId = result.appointmentId;
+            fullAppointmentData.flowType = "instant";
+            fullAppointmentData.doctorUid = doctorUid;
+            fullAppointmentData.original_fee = fee;
+            fullAppointmentData.final_amount = fee;
+            sessionStorage.setItem("pendingAppointment", JSON.stringify(fullAppointmentData));
+            
+            window.location.href = "doctorAppointmentPayment.html";
+        } else {
+            alert("Unable to start consultation. Please try again.");
+        }
+    } catch (err) {
+        console.error("Booking error:", err);
+        alert("An error occurred while starting the consultation.");
+    }
 }
 
 /* -------------------------

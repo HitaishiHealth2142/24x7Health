@@ -70,32 +70,32 @@ db.query(createDoctorsTable, (err) => {
 });
 
 // --- APPOINTMENTS TABLE ---
-const createAppointmentsTable = `
-  CREATE TABLE IF NOT EXISTS appointments (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    doctor_id INT NOT NULL,
-    doctor_uid VARCHAR(10),
-    patient_id INT,
-    patient_name VARCHAR(100),
-    appointment_time TIME NOT NULL,
-    appointment_date DATE NOT NULL,
-    slot_time TIME,
-    slot_date DATE,
-    mode VARCHAR(50),
-    payment_status VARCHAR(50),
-    status VARCHAR(50) DEFAULT 'Pending',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE KEY unique_slot (doctor_id, appointment_time, appointment_date)
-  )
-`;
+// const createAppointmentsTable = `
+//   CREATE TABLE IF NOT EXISTS appointments (
+//     id INT AUTO_INCREMENT PRIMARY KEY,
+//     doctor_id INT NOT NULL,
+//     doctor_uid VARCHAR(10),
+//     patient_id INT,
+//     patient_name VARCHAR(100),
+//     appointment_time TIME NOT NULL,
+//     appointment_date DATE NOT NULL,
+//     slot_time TIME,
+//     slot_date DATE,
+//     mode VARCHAR(50),
+//     payment_status VARCHAR(50),
+//     status VARCHAR(50) DEFAULT 'Pending',
+//     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+//     UNIQUE KEY unique_slot (doctor_id, appointment_time, appointment_date)
+//   )
+// `;
 
-db.query(createAppointmentsTable, (err, result) => {
-  if (err) {
-    console.error('Error creating appointments table:', err);
-  } else {
-    console.log('✅ Appointments table ensured/created successfully.');
-  }
-});
+// db.query(createAppointmentsTable, (err, result) => {
+//   if (err) {
+//     console.error('Error creating appointments table:', err);
+//   } else {
+//     console.log('✅ Appointments table ensured/created successfully.');
+//   }
+// });
 
 
 

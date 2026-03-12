@@ -364,12 +364,14 @@ let appointmentData = null;
 
 document.addEventListener("DOMContentLoaded", function(){
 
-const data = sessionStorage.getItem("appointmentPaymentData");
+let data =
+sessionStorage.getItem("appointmentPaymentData") ||
+sessionStorage.getItem("pendingAppointment");
 
 if(!data){
-    alert("No appointment found.");
-    window.location.href="doctors.html";
-    return;
+alert("No appointment found.");
+window.location.href="doctors.html";
+return;
 }
 
 appointmentData = JSON.parse(data);
@@ -408,74 +410,55 @@ document.getElementById("qrBox").style.display="none";
 }
 
 
+// Simulate payment process
+async function makePayment() {
+    if (!selectedMethod) {
+        alert("Please select payment method.");
+        return;
+    }
 
-async function makePayment(){
+    try {
+        const response = await fetch('/api/payment/simulate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                appointmentId: appointmentData.appointmentId,
+                method: selectedMethod
+            })
+        });
 
-if(!selectedMethod){
-alert("Please select payment method.");
-return;
-}
+        const result = await response.json();
+        if (!result.success) {
+            alert("Payment failed");
+            return;
+        }
 
-const payBtn = document.querySelector(".pay-btn");
+        alert("Payment Successful");
 
-payBtn.classList.add("loading");
-payBtn.innerHTML="<i class='fas fa-spinner'></i> Processing...";
+        appointmentData = JSON.parse(sessionStorage.getItem("pendingAppointment"));
 
-try{
+        if (appointmentData.flowType === "instant") {
+            // FLOW: INSTANT CONSULT -> MEET.HTML
+            const roomId = "apt_" + appointmentData.appointmentId;
+            sessionStorage.setItem("roomId", roomId);
 
-const response = await fetch('/api/payment/simulate',{
-method:'POST',
-headers:{'Content-Type':'application/json'},
-body:JSON.stringify({
-appointmentId: appointmentData.appointmentId,
-method:selectedMethod
-})
-});
+            // Notify the doctor via Socket.IO
+            socket.emit("join-call-room", {
+                roomId: roomId,
+                doctorUid: appointmentData.doctor_uid,
+                patientId: appointmentData.patient_id,
+                patientName: appointmentData.patient_name
+            });
 
-const result = await response.json();
+            window.location.href = `meet.html?roomId=${roomId}&doctorUid=${appointmentData.doctorUid}`;
+        } else {
+            // FLOW: STANDARD APPOINTMENT -> PATIENTPROFILE.HTML
+            window.location.href = "patientProfile.html";
+        }
 
-if(!result.success){
-alert("Payment failed");
-return;
-}
-
-/* PAYMENT SUCCESS */
-
-alert("Payment Successful");
-
-const roomId = "room_"+Date.now();
-
-sessionStorage.setItem("roomId",roomId);
-
-/* Notify doctor */
-
-socket.emit("join-call-room",{
-roomId:roomId,
-doctorUid:appointmentData.doctorUid,
-patientId:appointmentData.patientId,
-patientName:appointmentData.patientName
-});
-
-/* Redirect to video */
-
-setTimeout(()=>{
-
-window.location.href=
-"meet.html?roomId="+roomId+
-"&doctorUid="+appointmentData.doctorUid;
-
-},500);
-
-
-}catch(err){
-
-alert("Server error");
-
-payBtn.classList.remove("loading");
-payBtn.innerHTML="Pay & Confirm Appointment";
-
-}
-
+    } catch (err) {
+        console.error("Payment error:", err);
+    }
 }
 
 </script>

@@ -976,42 +976,59 @@
      * Fetch doctor data and set up the dashboard
      */
     async function initializeProfile() {
-      showLoading(true);
+        showLoading(true);
 
-      // Get doctor UID from localStorage
-      doctorUid = localStorage.getItem("doctorUid");
+        // Get doctor UID from localStorage
+        doctorUid = localStorage.getItem("doctorUid");
 
-      if (!doctorUid) {
-        displayPageMessage("Authentication error. Redirecting to login", "error");
-        setTimeout(() => {
-          window.location.href = "login.html";
-        }, 1500);
-        return;
-      }
+        // Check if doctorUid exists
+        if (!doctorUid) {
+            displayPageMessage("Authentication error. Redirecting to login", "error");
+            setTimeout(() => {
+                window.location.href = "login.html";
+            }, 1500);
+            return;
+        }
 
-      // Join doctor's socket room for real-time updates
-      socket.emit("join-doctor-room", doctorUid);
+        /* ============================================================
+          1. SOCKET SETUP: Join room and Listen for Instant Calls
+        ============================================================ */
+        // Join doctor's socket room for notifications
+        socket.emit('join-doctor-room', doctorUid);
 
-      try {
-        // Fetch doctor profile data from API
-        const response = await fetch(`${API_BASE}/gdoctors/${doctorUid}`);
-        const doctorData = await response.json();
+        // Listen for incoming instant call requests from patients
+        socket.on('new-call', (data) => {
+            const joinCall = confirm(`Incoming instant consultation from ${data.patientName}. Would you like to join the meeting now?`);
+            if (joinCall) {
+                // Redirect doctor to the same meeting room as the patient
+                window.location.href = `meet.html?roomId=${data.roomId}`;
+            }
+        });
 
-        // Populate profile information
-        populateProfileData(doctorData);
+        /* ============================================================
+          2. PROFILE DATA: Fetch and Display
+        ============================================================ */
+        try {
+            // Fetch doctor profile data from API
+            const response = await fetch(`${API_BASE}/gdoctors/${doctorUid}`);
+            const doctorData = await response.json();
 
-        // Load dashboard statistics
-        loadDashboardStats();
+            // Populate profile information
+            populateProfileData(doctorData);
 
-        // Show dashboard and hide loading
-        showLoading(false);
-        showSection("dashboard");
-      } catch (err) {
-        console.error("Profile initialization error:", err);
-        displayPageMessage("Failed to load profile", "error");
-        showLoading(false);
-      }
+            // Load dashboard statistics
+            loadDashboardStats();
+
+            // Show dashboard and hide loading
+            showLoading(false);
+            showSection("dashboard");
+        } catch (err) {
+            console.error("Profile initialization error:", err);
+            displayPageMessage("Failed to load profile", "error");
+            showLoading(false);
+        }
     }
+        
 
     // ========================================
     // SOCKET.IO EVENT LISTENERS
