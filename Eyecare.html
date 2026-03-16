@@ -1161,120 +1161,108 @@
 
     <!-- EYE CARE TREATMENTS SECTION -->
     <section style="padding:60px 20px;background:white;text-align:center;">
-        <h2 style="font-size:2.5em;margin-bottom:10px;color:#000000;">Our Eye Care Treatments</h2>
-        <p style="font-size:1.1em;color:#000000;margin-bottom:40px;"><b>We diagnose and treat a wide range of vision problems with precision and care.</b></p>
+        
+      <h2 style="font-size:2.5em;margin-bottom:10px;color:#000000;">Our Eye Care Treatments</h2>
+      <p style="font-size:1.1em;color:#000000;margin-bottom:40px;">
+        <b>We diagnose and treat a wide range of vision problems with precision and care.</b>
+      </p>
 
-        <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:30px;max-width:1200px;margin:0 auto;">
+      <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:30px;max-width:1200px;margin:0 auto;">
 
-            <!-- Each Card -->
-            <div class="treatment-card" style="flex:1 1 300px;padding:20px;border:1px solid #ddd;border-radius:10px;background:#f9fcff;box-shadow:0 2px 8px rgba(0,0,0,0.05);transition:all 0.4s;">
-              <h3 style="color:#00bcd4;font-size:1.4em;margin-bottom:10px;">👁️ Refractive Errors</h3>
-              <p style="color:#080808;">Treatments for Myopia, Hyperopia, and Astigmatism including eyeglasses, contact lenses, and laser correction.</p>
-              <button  onclick="location.href='eyeDoctors.html'"  style="margin-top:20px;padding:12px 30px;background:linear-gradient(to right,#00bcd4,#0097a7);color:white;font-weight:bold;font-size:1em;border:none;border-radius:30px;cursor:pointer;transition:background 0.3s;">Book Now</button>
-            </div>
-
-            <div class="treatment-card" style="flex:1 1 300px;padding:20px;border:1px solid #ddd;border-radius:10px;background:#f9fcff;box-shadow:0 2px 8px rgba(0,0,0,0.05);transition:all 0.4s;">
-              <h3 style="color:#00bcd4;font-size:1.4em;margin-bottom:10px;">🧠 Cataract Surgery</h3>
-              <p style="color:#000000;">Advanced cataract treatment and lens replacement surgeries with high precision and safety.</p>
-              <button  onclick="location.href='eyeDoctors.html'"  style="margin-top:20px;padding:12px 30px;background:linear-gradient(to right,#00bcd4,#0097a7);color:white;font-weight:bold;font-size:1em;border:none;border-radius:30px;cursor:pointer;transition:background 0.3s;">Book Now</button>
-            </div>
-
-            <div class="treatment-card" style="flex:1 1 300px;padding:20px;border:1px solid #ddd;border-radius:10px;background:#f9fcff;box-shadow:0 2px 8px rgba(0,0,0,0.05);transition:all 0.4s;">
-              <h3 style="color:#00bcd4;font-size:1.4em;margin-bottom:10px;">💉 Glaucoma Treatment</h3>
-              <p style="color:#050505;">Early detection and pressure control through medication, laser therapy, or surgery.</p>
-              <button  onclick="location.href='eyeDoctors.html'"  style="margin-top:20px;padding:12px 30px;background:linear-gradient(to right,#00bcd4,#0097a7);color:white;font-weight:bold;font-size:1em;border:none;border-radius:30px;cursor:pointer;transition:background 0.3s;">Book Now</button>
-            </div>
-
-            <div class="treatment-card" style="flex:1 1 300px;padding:20px;border:1px solid #ddd;border-radius:10px;background:#f9fcff;box-shadow:0 2px 8px rgba(0,0,0,0.05);transition:all 0.4s;">
-              <h3 style="color:#00bcd4;font-size:1.4em;margin-bottom:10px;">🔬 Diabetic Retinopathy</h3>
-              <p style="color:#000000;">Retinal care for diabetic patients using advanced imaging and laser treatment to prevent vision loss.</p>
-              <button  onclick="location.href='eyeDoctors.html'"  style="margin-top:20px;padding:12px 30px;background:linear-gradient(to right,#00bcd4,#0097a7);color:white;font-weight:bold;font-size:1em;border:none;border-radius:30px;cursor:pointer;transition:background 0.3s;">Book Now</button>
-            </div>
-
-            <div class="treatment-card" style="flex:1 1 300px;padding:20px;border:1px solid #ddd;border-radius:10px;background:#f9fcff;box-shadow:0 2px 8px rgba(0,0,0,0.05);transition:all 0.4s;">
-              <h3 style="color:#00bcd4;font-size:1.4em;margin-bottom:10px;">🔍 Regular Eye Checkups</h3>
-              <p style="color:#030303;">We recommend periodic exams to maintain eye health, even without symptoms. Prevention is better than cure!</p>
-              <button onclick="location.href='eyeDoctors.html'" style="margin-top:20px;padding:12px 30px;background:linear-gradient(to right,#00bcd4,#0097a7);color:white;font-weight:bold;font-size:1em;border:none;border-radius:30px;cursor:pointer;transition:background 0.3s;">Book Now</button>
-            </div>
-
+        <!-- Card -->
+        <div class="treatment-card">
+          <h3>👁️ Refractive Errors</h3>
+          <p>Treatments for Myopia, Hyperopia, and Astigmatism including eyeglasses, contact lenses, and laser correction.</p>
         </div>
-      
-        <!-- Hover Effect Styling -->
-        <style>
-                .treatment-card:hover {
-                  background: linear-gradient(to bottom right, #e0f7fa, #ffffff);
-                  transform: translateY(-8px);
-                  box-shadow: 0 12px 30px rgba(0, 188, 212, 0.3);
-                }
 
-                .treatment-card:hover h3 {
-                  color: #006064;
-                }
+        <div class="treatment-card">
+          <h3>🧠 Cataract Surgery</h3>
+          <p>Advanced cataract treatment and lens replacement surgeries performed with modern microsurgical techniques.</p>
+        </div>
 
-                .treatment-card:hover p {
-                  color: #004d40;
-                }
-          
-            @keyframes fadeIn {
-                from { opacity: 0; }
-                to { opacity: 1; }
-            }
-            
+        <div class="treatment-card">
+          <h3>💉 Glaucoma Treatment</h3>
+          <p>Early detection and intraocular pressure control using medications, laser procedures, and surgery.</p>
+        </div>
 
-            @keyframes fadeInUp {
-                from {
-                    opacity: 0;
-                    transform: translateY(20px);
-                }
-                to {
-                    opacity: 1;
-                    transform: translateY(0);
-                }
-            }
+        <div class="treatment-card">
+          <h3>🔬 Diabetic Retinopathy</h3>
+          <p>Specialized retinal care for diabetic patients using advanced imaging and laser treatments.</p>
+        </div>
 
-            .treatment-card {
-                transition: all 0.4s ease-in-out !important;
-            }
+        <div class="treatment-card">
+          <h3>🔍 Regular Eye Checkups</h3>
+          <p>Routine vision exams help detect problems early and maintain long-term eye health.</p>
+        </div>
 
-            .treatment-card:hover {
-                background: linear-gradient(135deg, #00bcd4, #006064) !important;
-                transform: translateY(-10px) scale(1.02);
-                box-shadow: 0 12px 30px rgba(0, 188, 212, 0.2);
-                border-color: #00bcd4 !important;
-            }
+      </div>
 
-            .treatment-card:hover .card-content h3,
-            .treatment-card:hover .card-content p {
-                color: #fff !important;
-            }
+      <!-- SINGLE BUTTON -->
+      <div style="margin-top:50px;">
+        <button onclick="window.location.href='doctors.html?specialization=EYECARE'"
+          style="
+          padding:14px 40px;
+          font-size:1.1em;
+          font-weight:bold;
+          background:linear-gradient(135deg,#e53935,#c62828);
+          color:white;
+          border:none;
+          border-radius:40px;
+          cursor:pointer;
+          box-shadow:0 6px 15px rgba(0,0,0,0.2);
+          transition:all 0.3s;
+          ">
+          Find an Eye Care Doctor
+        </button>
+      </div>
 
-            .treatment-card:hover .card-hover-bg {
-                opacity: 0.15;
-            }
+      <style>
 
-            .treatment-card:hover button {
-                background: linear-gradient(to right, #ffffff, #e0f7fa) !important;
-                color: #006064 !important;
-                transform: translateY(-2px);
-                box-shadow: 0 4px 8px rgba(255,255,255,0.3);
-            }
+        .treatment-card{
+          flex:1 1 300px;
+          padding:25px;
+          border:1px solid #ddd;
+          border-radius:12px;
+          background:#f9fcff;
+          box-shadow:0 2px 10px rgba(0,0,0,0.05);
+          transition:all 0.35s;
+        }
 
-            button:hover {
-                transform: translateY(-2px);
-                box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-            }
+        .treatment-card h3{
+          color:#00bcd4;
+          font-size:1.4em;
+          margin-bottom:10px;
+        }
 
-            input:focus, textarea:focus {
-                border-color: #00bcd4 !important;
-                outline: none;
-            }
+        .treatment-card p{
+          color:#333;
+          line-height:1.6;
+        }
 
-            @media (max-width: 768px) {
-                .treatment-card {
-                    flex: 1 1 100% !important;
-                }
-            }
-        </style>
+        .treatment-card:hover{
+          background:linear-gradient(135deg,#00bcd4,#006064);
+          transform:translateY(-8px);
+          box-shadow:0 15px 35px rgba(0,188,212,0.3);
+        }
+
+        .treatment-card:hover h3,
+        .treatment-card:hover p{
+          color:white;
+        }
+
+        button:hover{
+          transform:translateY(-3px);
+          box-shadow:0 8px 20px rgba(0,0,0,0.3);
+        }
+
+        @media(max-width:768px){
+          .treatment-card{
+            flex:1 1 100%;
+          }
+        }
+
+      </style>
+
     </section>
 
     <section style="padding:60px 20px; background:#f9faff url('images/eye.png') no-repeat center center; background-size:100%; animation:zoomEffect 15s ease-in-out infinite; font-family:'Segoe UI', sans-serif; text-align:center; position:relative; overflow:hidden;">

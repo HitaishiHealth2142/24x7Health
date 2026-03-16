@@ -149,10 +149,12 @@ const driversRoutes = require('./routes/Drivers');
 const ambulancebookingRoutes = require('./routes/ambulancebooking');
 const adminRoutes = require('./routes/Admin')
 const subscribersRoutes = require('./routes/subscribers');
+const clinicAppointmentRoutes = require('./routes/clinicAppointment');
 
 /* =====================
    API Routes (AFTER IMPORTS)
 ===================== */
+app.use('/api', clinicAppointmentRoutes);
 app.use('/api', subscribersRoutes);
 app.use('/api', adminRoutes);
 app.use('/api', unifiedLoginRoutes);
