@@ -1784,7 +1784,7 @@
             }
         } else if (specializationFromUrl) {
             document.getElementById('specializationFilter').value = specializationFromUrl;
-            filterDoctors();
+                filterDoctors();
         }
     }
 
@@ -2098,7 +2098,10 @@
     const experience = document.getElementById('experienceFilter').value;
     let filtered = allDoctors;
     if (specialization) {
-        filtered = filtered.filter(doc => doc.specialization === specialization);
+        filtered = filtered.filter(doc =>
+            doc.specialization &&
+            doc.specialization.toLowerCase().includes(specialization.toLowerCase())
+        );
     }
     if (experience) {
         filtered = filtered.filter(doc => parseInt(doc.experience) >= parseInt(experience));
