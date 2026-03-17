@@ -539,7 +539,7 @@
         let allAppointmentsData = [];
 
         async function fetchAppointmentsDashboard() {
-            const dateFilter = document.getElementById('filterDate').value || new Date().toISOString().split('T')[0];
+            const dateFilter = document.getElementById('filterDate').value;
             const areaFilter = document.getElementById('filterArea').value || '';
             const zipcodeFilter = document.getElementById('filterZipcode').value || '';
             
@@ -699,10 +699,11 @@
         }
 
         function resetAppointmentsFilters() {
-            const today = new Date().toISOString().split('T')[0];
-            document.getElementById('filterDate').value = today;
+
+            document.getElementById('filterDate').value = '';
             document.getElementById('filterArea').value = '';
             document.getElementById('filterZipcode').value = '';
+
             fetchAppointmentsDashboard();
         }
 
