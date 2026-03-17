@@ -596,10 +596,10 @@
             const options = Array.from(select.options).map(o => o.value);
             
             zipcodeData.forEach(item => {
-                if (!options.includes(item.zip_code) && item.zip_code) {
+                if (!options.includes(item.zipcode) && item.zipcode) {
                     const option = document.createElement('option');
-                    option.value = item.zip_code;
-                    option.textContent = `${item.zip_code} (${item.count})`;
+                    option.value = item.zipcode;
+                    option.textContent = `${item.zipcode} (${item.count})`;
                     select.appendChild(option);
                 }
             });
@@ -648,7 +648,7 @@
             chartsInstances.zipcode = new Chart(zipcodeCtx, {
                 type: 'bar',
                 data: {
-                    labels: (data.zipcodeAnalytics || []).map(z => z.zip_code).slice(0, 10),
+                    labels: (data.zipcodeAnalytics || []).map(z => z.zipcode).slice(0, 10),
                     datasets: [{
                         label: 'Count',
                         data: (data.zipcodeAnalytics || []).map(z => z.count).slice(0, 10),
@@ -681,7 +681,7 @@
                     <td class="px-3 py-4 md:px-4">${apt.state || '—'}</td>
                     <td class="px-3 py-4 md:px-4">${apt.city || '—'}</td>
                     <td class="px-3 py-4 md:px-4">${apt.area || '—'}</td>
-                    <td class="px-3 py-4 md:px-4 font-mono">${apt.zip_code || '—'}</td>
+                    <td class="px-3 py-4 md:px-4 font-mono">${apt.zipcode || '—'}</td>
                     <td class="px-3 py-4 md:px-4">${apt.appointment_date}</td>
                     <td class="px-3 py-4 md:px-4">${apt.appointment_time}</td>
                     <td class="px-3 py-4 md:px-4">

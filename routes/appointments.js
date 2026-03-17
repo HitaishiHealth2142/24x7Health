@@ -608,7 +608,7 @@ router.get('/admin/appointments-dashboard', (req, res) => {
   }
 
   if (zipcode) {
-    whereConditions.push('d.zip_code = ?');
+    whereConditions.push('d.zipcode = ?');
     queryParams.push(zipcode);
   }
 
@@ -661,7 +661,7 @@ router.get('/admin/appointments-dashboard', (req, res) => {
             const areaAnalytics = areaResult || [];
 
             // Query 6: Zipcode Distribution
-            db.query(`SELECT d.zip_code, COUNT(*) as count FROM appointments a JOIN doctors d ON a.doctor_uid = d.uid ${whereClause} GROUP BY d.zip_code ORDER BY count DESC`, queryParams, (err6, zipcodeResult) => {
+            db.query(`SELECT d.zipcode, COUNT(*) as count FROM appointments a JOIN doctors d ON a.doctor_uid = d.uid ${whereClause} GROUP BY d.zipcode ORDER BY count DESC`, queryParams, (err6, zipcodeResult) => {
               if (err6) {
                 console.error('Error getting zipcode distribution:', err6);
               }
@@ -671,7 +671,7 @@ router.get('/admin/appointments-dashboard', (req, res) => {
               // Query 7: Full Appointment Records
               db.query(`SELECT 
                 a.appointment_uid, a.patient_name, a.patient_mobile, a.doctor_name,
-                d.state, d.city, d.area, d.zip_code,
+                d.state, d.city, d.area, d.zipcode,
                 a.appointment_date, a.appointment_time, a.payment_status
               FROM appointments a 
               JOIN doctors d ON a.doctor_uid = d.uid
