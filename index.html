@@ -1172,7 +1172,7 @@
                 }
 
                 const originals = nodes.map(n => n.originalText);
-                const apiKey = "AIzaSyB3ebJaiaYFyB30sGAx1PmfmgnDPFCajKk";
+                const apiKey = "enter valid api key";
                 const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
                 const textToTranslate = originals.join("|||");
                 const prompt = `Translate the following text parts into ${label}. The parts are separated by "|||". Maintain the "|||" separator in your output. Do not translate "24x7 Health" or "24x7 Health Service". If a part is a number or symbol, return it as is. \n\nTEXT: ${textToTranslate}`;

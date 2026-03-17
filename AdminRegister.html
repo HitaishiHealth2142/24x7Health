@@ -63,83 +63,88 @@
     </div>
 
 
-<script>
-const registerForm = document.getElementById("registerForm");
-const otpForm = document.getElementById("otpForm");
-const message = document.getElementById("message");
+    <script src="config.js"></script>
+    <script>
+        document.addEventListener('DOMCONTENTLOADED', async () => {
+            await LoadConfig();
+        })
 
-let savedEmail = "";
+        const registerForm = document.getElementById("registerForm");
+        const otpForm = document.getElementById("otpForm");
+        const message = document.getElementById("message");
 
-/* ==============================
-   STEP 1: REGISTER
-============================== */
-registerForm.addEventListener("submit", async (e) => {
-    e.preventDefault();
+        let savedEmail = "";
 
-    const email = document.getElementById("email").value;
-    const password = document.getElementById("password").value;
+        /* ==============================
+        STEP 1: REGISTER
+        ============================== */
+        registerForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
 
-    message.innerText = "Sending OTP...";
-    message.className = "text-blue-600 text-center text-sm mt-4";
+            const email = document.getElementById("email").value;
+            const password = document.getElementById("password").value;
 
-    const res = await fetch("/api/admin/register", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ email, password })
-    });
+            message.innerText = "Sending OTP...";
+            message.className = "text-blue-600 text-center text-sm mt-4";
 
-    const data = await res.json();
+            const res = await fetch(`${API_BASE_URL}/admin/register`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ email, password })
+            });
 
-    if (res.ok) {
-        savedEmail = email;
-        registerForm.classList.add("hidden");
-        otpForm.classList.remove("hidden");
+            const data = await res.json();
 
-        message.innerText = "OTP sent to your email.";
-        message.className = "text-green-600 text-center text-sm mt-4";
-    } else {
-        message.innerText = data.message;
-        message.className = "text-red-600 text-center text-sm mt-4";
-    }
-});
+            if (res.ok) {
+                savedEmail = email;
+                registerForm.classList.add("hidden");
+                otpForm.classList.remove("hidden");
+
+                message.innerText = "OTP sent to your email.";
+                message.className = "text-green-600 text-center text-sm mt-4";
+            } else {
+                message.innerText = data.message;
+                message.className = "text-red-600 text-center text-sm mt-4";
+            }
+        });
 
 
-/* ==============================
-   STEP 2: VERIFY OTP
-============================== */
-otpForm.addEventListener("submit", async (e) => {
-    e.preventDefault();
+        /* ==============================
+        STEP 2: VERIFY OTP
+        ============================== */
+        otpForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
 
-    const otp = document.getElementById("otp").value;
+            const otp = document.getElementById("otp").value;
 
-    message.innerText = "Verifying OTP...";
-    message.className = "text-blue-600 text-center text-sm mt-4";
+            message.innerText = "Verifying OTP...";
+            message.className = "text-blue-600 text-center text-sm mt-4";
 
-    const res = await fetch("/api/admin/verify-register-otp", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ email: savedEmail, otp })
-    });
+            const res = await fetch(`${API_BASE_URL}/admin/verify-register-otp`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ email: savedEmail, otp })
+            });
 
-    const data = await res.json();
+            const data = await res.json();
 
-    if (res.ok) {
-        message.innerText = "Admin Registered Successfully!";
-        message.className = "text-green-600 text-center text-sm mt-4";
+            if (res.ok) {
+                message.innerText = "Admin Registered Successfully!";
+                message.className = "text-green-600 text-center text-sm mt-4";
 
-        setTimeout(() => {
-            window.location.href = "AdminLogin.html";
-        }, 2000);
-    } else {
-        message.innerText = data.message;
-        message.className = "text-red-600 text-center text-sm mt-4";
-    }
-});
-</script>
+                setTimeout(() => {
+                    window.location.href = "AdminLogin.html";
+                }, 2000);
+            } else {
+                message.innerText = data.message;
+                message.className = "text-red-600 text-center text-sm mt-4";
+            }
+        });
+    </script>
 
 </body>
 </html>

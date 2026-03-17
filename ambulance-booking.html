@@ -576,7 +576,12 @@ body {
     </div>
   </div>
 
+  <script src="config.js"></script>
   <script>
+    document.addEventListener('DOMCONTENTLOADED', async () => {
+      await LoadConfig();
+    });
+
   // Type selection functionality
   document.querySelectorAll('.type-box').forEach(box => {
     box.addEventListener('click', function() {
@@ -687,7 +692,7 @@ body {
       
       /*
       // Actual API call (commented out for demo)
-      fetch('https://www.24x7health.in/api/ambulance/book', {
+      fetch(`${API_BASE_URL}/ambulance/book`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
