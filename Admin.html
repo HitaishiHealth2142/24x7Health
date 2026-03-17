@@ -7,6 +7,8 @@
     <!-- Tailwind + Inter font -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+    <!-- Chart.js for analytics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <!-- enhanced smooth & responsive style -->
     <style>
         * { font-family: 'Inter', system-ui, -apple-system, sans-serif; }
@@ -46,6 +48,11 @@
                 <button onclick="switchTab('ambulance')" id="tab-ambulance" class="sidebar-item flex items-center gap-3 w-full p-3.5 rounded-xl hover:bg-slate-700/80 hover:text-white group font-medium text-slate-300">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="group-hover:text-blue-300"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg>
                     <span>Ambulance Partners</span>
+                </button>
+
+                <button onclick="switchTab('appointments')" id="tab-appointments" class="sidebar-item flex items-center gap-3 w-full p-3.5 rounded-xl hover:bg-slate-700/80 hover:text-white group font-medium text-slate-300">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="group-hover:text-blue-300"><rect x="3" y="4" width="18" height="18" rx="2"></rect><path d="M16 2v4"></path><path d="M8 2v4"></path><path d="M3 10h18"></path></svg>
+                    <span>Appointments</span>
                 </button>
 
                 <button onclick="switchTab('wallet')" id="tab-wallet" class="sidebar-item flex items-center gap-3 w-full p-3.5 rounded-xl hover:bg-slate-700/80 hover:text-white group font-medium text-slate-300">
@@ -92,6 +99,118 @@
             <!-- AMBULANCE VIEW (providers) -->
             <section id="view-ambulance" class="view-content hidden space-y-5">
                 <div id="providersContainer" class="grid gap-3 md:gap-4"></div>
+            </section>
+
+            <!-- APPOINTMENTS VIEW (analytics dashboard) -->
+            <section id="view-appointments" class="view-content hidden space-y-5 md:space-y-6">
+                <!-- Analytics Cards -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+                    <div class="bg-white p-5 md:p-6 rounded-2xl shadow-md border border-slate-200">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-xs md:text-sm text-slate-500 font-medium uppercase tracking-wide">Total Appointments</p>
+                                <h3 class="text-2xl md:text-3xl font-bold text-slate-800 mt-2" id="totalAppointmentsCard">0</h3>
+                            </div>
+                            <div class="bg-blue-100 text-blue-600 p-4 rounded-xl">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"></rect><path d="M16 2v4"></path><path d="M8 2v4"></path><path d="M3 10h18"></path></svg>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-5 md:p-6 rounded-2xl shadow-md border border-slate-200">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-xs md:text-sm text-slate-500 font-medium uppercase tracking-wide">Completed</p>
+                                <h3 class="text-2xl md:text-3xl font-bold text-green-600 mt-2" id="completedAppointmentsCard">0</h3>
+                            </div>
+                            <div class="bg-green-100 text-green-600 p-4 rounded-xl">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-5 md:p-6 rounded-2xl shadow-md border border-slate-200">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-xs md:text-sm text-slate-500 font-medium uppercase tracking-wide">Pending</p>
+                                <h3 class="text-2xl md:text-3xl font-bold text-amber-600 mt-2" id="pendingAppointmentsCard">0</h3>
+                            </div>
+                            <div class="bg-amber-100 text-amber-600 p-4 rounded-xl">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-5 md:p-6 rounded-2xl shadow-md border border-slate-200">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-xs md:text-sm text-slate-500 font-medium uppercase tracking-wide">Total Revenue</p>
+                                <h3 class="text-2xl md:text-3xl font-bold text-slate-800 mt-2" id="totalRevenueCard">₹0</h3>
+                            </div>
+                            <div class="bg-purple-100 text-purple-600 p-4 rounded-xl">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts Row -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
+                    <div class="bg-white p-5 md:p-6 rounded-2xl shadow-md border border-slate-200">
+                        <h3 class="text-lg font-bold text-slate-800 mb-4">Appointments by Hour</h3>
+                        <canvas id="hourlyChart" style="max-height: 300px;"></canvas>
+                    </div>
+                    <div class="bg-white p-5 md:p-6 rounded-2xl shadow-md border border-slate-200">
+                        <h3 class="text-lg font-bold text-slate-800 mb-4">Appointments by Area</h3>
+                        <canvas id="areaChart" style="max-height: 300px;"></canvas>
+                    </div>
+                    <div class="bg-white p-5 md:p-6 rounded-2xl shadow-md border border-slate-200">
+                        <h3 class="text-lg font-bold text-slate-800 mb-4">Appointments by Zipcode</h3>
+                        <canvas id="zipcodeChart" style="max-height: 300px;"></canvas>
+                    </div>
+                </div>
+
+                <!-- Filters -->
+                <div class="bg-white p-5 md:p-6 rounded-2xl shadow-md border border-slate-200">
+                    <h3 class="text-lg font-bold text-slate-800 mb-4">Filters</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                        <input type="date" id="filterDate" class="border border-slate-200 px-4 py-2.5 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm">
+                        <select id="filterArea" class="border border-slate-200 px-4 py-2.5 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm">
+                            <option value="">All Areas</option>
+                        </select>
+                        <select id="filterZipcode" class="border border-slate-200 px-4 py-2.5 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm">
+                            <option value="">All Zipcodes</option>
+                        </select>
+                        <div class="flex gap-2">
+                            <button onclick="applyAppointmentsFilters()" class="flex-1 bg-blue-600 text-white px-4 py-2.5 rounded-xl font-semibold hover:bg-blue-700 transition text-sm">Apply</button>
+                            <button onclick="resetAppointmentsFilters()" class="flex-1 bg-slate-200 text-slate-800 px-4 py-2.5 rounded-xl font-semibold hover:bg-slate-300 transition text-sm">Reset</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Appointments Table -->
+                <div class="bg-white rounded-2xl shadow-md border border-slate-200 overflow-hidden">
+                    <div class="wallet-scroll">
+                        <table class="min-w-full text-xs md:text-sm">
+                            <thead class="bg-slate-100 text-slate-600 uppercase tracking-wider">
+                                <tr>
+                                    <th class="px-3 py-4 md:px-4 text-left">Appointment ID</th>
+                                    <th class="px-3 py-4 md:px-4 text-left">Patient Name</th>
+                                    <th class="px-3 py-4 md:px-4 text-left">Mobile</th>
+                                    <th class="px-3 py-4 md:px-4 text-left">Doctor Name</th>
+                                    <th class="px-3 py-4 md:px-4 text-left">State</th>
+                                    <th class="px-3 py-4 md:px-4 text-left">City</th>
+                                    <th class="px-3 py-4 md:px-4 text-left">Area</th>
+                                    <th class="px-3 py-4 md:px-4 text-left">Zipcode</th>
+                                    <th class="px-3 py-4 md:px-4 text-left">Date</th>
+                                    <th class="px-3 py-4 md:px-4 text-left">Time</th>
+                                    <th class="px-3 py-4 md:px-4 text-left">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="appointmentsTableBody" class="divide-y divide-slate-100"></tbody>
+                        </table>
+                    </div>
+                </div>
             </section>
 
             <!-- WALLET VIEW (responsive card & table) -->
@@ -158,6 +277,7 @@
             const titles = {
                 'opinions': ['Blogs & Opinions', 'Respond to user feedback and publish insights.'],
                 'ambulance': ['Ambulance Approvals', 'Manage and vet healthcare partner applications.'],
+                'appointments': ['Appointments Dashboard', 'View analytics and manage appointment data.'],
                 'wallet': ['Wallet & Settlements', 'Manage admin earnings and doctor payouts.']
             };
 
@@ -167,6 +287,7 @@
             // load data per tab (original calls)
             if (tabId === 'opinions') fetchPendingOpinions();
             if (tabId === 'ambulance') loadProviders();
+            if (tabId === 'appointments') fetchAppointmentsDashboard();
             if (tabId === 'wallet') {
                 fetchAdminWallet();
             }
@@ -413,9 +534,183 @@
             window.location.replace("index.html");
         });
 
-        // --- Init (load opinions as default) ---
+        // --- Appointments Dashboard Functions ---
+        let chartsInstances = {};
+        let allAppointmentsData = [];
+
+        async function fetchAppointmentsDashboard() {
+            const dateFilter = document.getElementById('filterDate').value || new Date().toISOString().split('T')[0];
+            const areaFilter = document.getElementById('filterArea').value || '';
+            const zipcodeFilter = document.getElementById('filterZipcode').value || '';
+            
+            const params = new URLSearchParams();
+            if (dateFilter) params.append('date', dateFilter);
+            if (areaFilter) params.append('area', areaFilter);
+            if (zipcodeFilter) params.append('zipcode', zipcodeFilter);
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/admin/appointments-dashboard?${params.toString()}`);
+                const data = await response.json();
+                
+                allAppointmentsData = data.appointments || [];
+                
+                // Update cards
+                document.getElementById('totalAppointmentsCard').textContent = data.totalAppointments || 0;
+                document.getElementById('completedAppointmentsCard').textContent = data.completed || 0;
+                document.getElementById('pendingAppointmentsCard').textContent = data.pending || 0;
+                document.getElementById('totalRevenueCard').textContent = '₹' + (data.revenue || 0);
+                
+                // Populate filter dropdowns
+                await populateAreaFilter(data.areaAnalytics || []);
+                await populateZipcodeFilter(data.zipcodeAnalytics || []);
+                
+                // Update charts
+                updateAppointmentsCharts(data);
+                
+                // Render table
+                renderAppointmentsTable(allAppointmentsData);
+            } catch (err) {
+                console.error('Error fetching appointments:', err);
+                document.getElementById('appointmentsTableBody').innerHTML = '<tr><td colspan="11" class="text-center py-6 text-red-500">Failed to load appointments</td></tr>';
+            }
+        }
+
+        function populateAreaFilter(areaData) {
+            const select = document.getElementById('filterArea');
+            const currentValue = select.value;
+            const options = Array.from(select.options).map(o => o.value);
+            
+            areaData.forEach(item => {
+                if (!options.includes(item.area) && item.area) {
+                    const option = document.createElement('option');
+                    option.value = item.area;
+                    option.textContent = `${item.area} (${item.count})`;
+                    select.appendChild(option);
+                }
+            });
+        }
+
+        function populateZipcodeFilter(zipcodeData) {
+            const select = document.getElementById('filterZipcode');
+            const currentValue = select.value;
+            const options = Array.from(select.options).map(o => o.value);
+            
+            zipcodeData.forEach(item => {
+                if (!options.includes(item.zip_code) && item.zip_code) {
+                    const option = document.createElement('option');
+                    option.value = item.zip_code;
+                    option.textContent = `${item.zip_code} (${item.count})`;
+                    select.appendChild(option);
+                }
+            });
+        }
+
+        function updateAppointmentsCharts(data) {
+            // Hourly Chart
+            if (chartsInstances.hourly) chartsInstances.hourly.destroy();
+            const hourlyCtx = document.getElementById('hourlyChart').getContext('2d');
+            chartsInstances.hourly = new Chart(hourlyCtx, {
+                type: 'bar',
+                data: {
+                    labels: (data.hourlyDistribution || []).map(h => h.hour + ':00'),
+                    datasets: [{
+                        label: 'Appointments',
+                        data: (data.hourlyDistribution || []).map(h => h.count),
+                        backgroundColor: '#3b82f6',
+                        borderColor: '#1e40af',
+                        borderWidth: 1
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: true }
+            });
+
+            // Area Chart (Pie)
+            if (chartsInstances.area) chartsInstances.area.destroy();
+            const areaCtx = document.getElementById('areaChart').getContext('2d');
+            chartsInstances.area = new Chart(areaCtx, {
+                type: 'pie',
+                data: {
+                    labels: (data.areaAnalytics || []).map(a => a.area || 'Unknown'),
+                    datasets: [{
+                        data: (data.areaAnalytics || []).map(a => a.count),
+                        backgroundColor: [
+                            '#ff6384', '#36a2eb', '#ffce56', '#4bc0c0', '#9966ff',
+                            '#ff9f40', '#ff6384', '#c9cbcf', '#4bc0c0', '#ff6384'
+                        ]
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: true }
+            });
+
+            // Zipcode Chart
+            if (chartsInstances.zipcode) chartsInstances.zipcode.destroy();
+            const zipcodeCtx = document.getElementById('zipcodeChart').getContext('2d');
+            chartsInstances.zipcode = new Chart(zipcodeCtx, {
+                type: 'bar',
+                data: {
+                    labels: (data.zipcodeAnalytics || []).map(z => z.zip_code).slice(0, 10),
+                    datasets: [{
+                        label: 'Count',
+                        data: (data.zipcodeAnalytics || []).map(z => z.count).slice(0, 10),
+                        backgroundColor: '#8b5cf6',
+                        borderColor: '#6d28d9',
+                        borderWidth: 1
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: true }
+            });
+        }
+
+        function renderAppointmentsTable(appointments) {
+            const tbody = document.getElementById('appointmentsTableBody');
+            tbody.innerHTML = '';
+
+            if (!appointments || appointments.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="11" class="text-center py-6 text-slate-400">No appointments found</td></tr>';
+                return;
+            }
+
+            appointments.slice(0, 500).forEach(apt => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50/80';
+                tr.innerHTML = `
+                    <td class="px-3 py-4 md:px-4 font-mono text-xs text-slate-700">${apt.appointment_uid}</td>
+                    <td class="px-3 py-4 md:px-4 font-medium">${apt.patient_name}</td>
+                    <td class="px-3 py-4 md:px-4 text-slate-600">${apt.patient_mobile || '—'}</td>
+                    <td class="px-3 py-4 md:px-4 font-medium">${apt.doctor_name}</td>
+                    <td class="px-3 py-4 md:px-4">${apt.state || '—'}</td>
+                    <td class="px-3 py-4 md:px-4">${apt.city || '—'}</td>
+                    <td class="px-3 py-4 md:px-4">${apt.area || '—'}</td>
+                    <td class="px-3 py-4 md:px-4 font-mono">${apt.zip_code || '—'}</td>
+                    <td class="px-3 py-4 md:px-4">${apt.appointment_date}</td>
+                    <td class="px-3 py-4 md:px-4">${apt.appointment_time}</td>
+                    <td class="px-3 py-4 md:px-4">
+                        <span class="px-2.5 py-1 rounded-full text-xs font-semibold ${
+                            apt.payment_status === 'Paid' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'
+                        }">${apt.payment_status || 'Pending'}</span>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function applyAppointmentsFilters() {
+            fetchAppointmentsDashboard();
+        }
+
+        function resetAppointmentsFilters() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('filterDate').value = today;
+            document.getElementById('filterArea').value = '';
+            document.getElementById('filterZipcode').value = '';
+            fetchAppointmentsDashboard();
+        }
+
+        // --- Init (load appointments as default) ---
         document.addEventListener('DOMContentLoaded', () => {
-            switchTab('opinions');
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('filterDate').value = today;
+            switchTab('appointments');
         });
     </script>
     <!-- ensure that any leftover inline styles don't break -->
