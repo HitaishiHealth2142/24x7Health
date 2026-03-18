@@ -348,7 +348,44 @@ router.get("/specializations", (req, res) => {
 
 // Get All Doctors (merged - includes uid from both files)
 router.get("/getdoctors", (req, res) => {
-    const sql = "SELECT id, uid, first_name, last_name, email, experience, specialization, clinic, door_no, area, city, state, country, zipcode, degree, university, availability, from_time, to_time, profile_image_url FROM doctors";
+    const sql = `
+        SELECT 
+            id, 
+            uid, 
+            first_name, 
+            last_name, 
+            email, 
+            mobile,
+            experience, 
+            specialization, 
+            clinic,
+
+            door_no, 
+            area, 
+            city, 
+            state, 
+            country, 
+            zipcode,
+
+            CONCAT(
+                COALESCE(door_no, ''), ', ',
+                COALESCE(area, ''), ', ',
+                COALESCE(city, ''), ', ',
+                COALESCE(state, ''), ', ',
+                COALESCE(country, ''), ' - ',
+                COALESCE(zipcode, '')
+            ) AS address,
+
+            degree, 
+            university, 
+            availability, 
+            from_time, 
+            to_time, 
+            profile_image_url
+
+        FROM doctors
+    `;
+
     db.query(sql, (err, results) => {
         if (err) {
             console.error("Error fetching doctors:", err);

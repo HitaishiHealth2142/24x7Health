@@ -1652,14 +1652,25 @@
         
         <div class="filters-container">
             <div class="filters">
-                <select id="specializationFilter" aria-label="Filter by specialization">
+                <select id="specializationFilter">
                     <option value="">All Specializations</option>
                 </select>
-                <select id="experienceFilter" aria-label="Filter by experience">
+
+                <select id="experienceFilter">
                     <option value="">Any Experience</option>
                     <option value="5">5+ years</option>
                     <option value="10">10+ years</option>
                     <option value="15">15+ years</option>
+                </select>
+
+                <!-- NEW -->
+                <select id="areaFilter">
+                    <option value="">All Areas</option>
+                </select>
+
+                <!-- NEW -->
+                <select id="zipcodeFilter">
+                    <option value="">All Zipcodes</option>
                 </select>
             </div>
         </div>
@@ -1757,6 +1768,32 @@
     });
     }
 
+    function populateLocationFilters() {
+        const areaFilter = document.getElementById('areaFilter');
+        const zipcodeFilter = document.getElementById('zipcodeFilter');
+
+        const areas = [...new Set(allDoctors.map(doc => doc.area))].sort();
+        const zipcodes = [...new Set(allDoctors.map(doc => doc.zipcode))].sort();
+
+        areas.forEach(area => {
+            if (area) {
+                const option = document.createElement('option');
+                option.value = area;
+                option.textContent = area;
+                areaFilter.appendChild(option);
+            }
+        });
+
+        zipcodes.forEach(zip => {
+            if (zip) {
+                const option = document.createElement('option');
+                option.value = zip;
+                option.textContent = zip;
+                zipcodeFilter.appendChild(option);
+            }
+        });
+    }
+
     async function fetchDoctors() {
     const doctorsList = document.getElementById('doctorsList');
     doctorsList.innerHTML = `<div style="text-align: center; padding: 30px;"><div class="loading" style="border-top-color: var(--primary);"></div><p>Loading Doctors...</p></div>`;
@@ -1771,6 +1808,7 @@
         allDoctors = data;
 
         populateSpecializationFilter();
+        populateLocationFilters();
         displayDoctors(allDoctors);
         updateMapMarkers(allDoctors);
         
@@ -1880,10 +1918,10 @@
             <div class="info-column">
             <div class="info-item"><span class="info-label">Availability:</span><span>${doctor.availability || 'N/A'}</span></div>
             <div class="info-item"><span class="info-label">Timings:</span><span>${doctor.from_time || 'N/A'} - ${doctor.to_time || 'N/A'}</span></div>
-            <div class="info-item"><span class="info-label">Contact:</span><span>${doctor.mobile || 'N/A'}</span></div>
+            <div class="info-item"><span class="info-label">Contact:</span><span><a href="tel:${doctor.mobile}" style="color:inherit; text-decoration:none;">${doctor.mobile || 'N/A'}</a></span></div>
             </div>
         </div>
-        <div class="detail-section"><div class="info-item"><span class="info-label">Address:</span><span>${doctor.address || 'N/A'}</span></div></div>
+        <div class="detail-section"><div class="info-item"> <span class="info-label">Address:</span><span onclick="window.open('https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(doctor.address)}')" style="cursor:pointer; color:#1a73e8;">${doctor.address || 'N/A'}</span></div></div>
         <div class="about-doctor">
             <h4>About Doctor</h4>
             <p>Dr. ${doctor.first_name} graduated with a degree in ${doctor.degree || 'N/A'} from ${doctor.university || 'N/A'} and has ${doctor.experience || 'N/A'} years of experience in ${doctor.specialization || 'N/A'}.</p>
@@ -2094,6 +2132,8 @@
     function setupEventListeners() {
     document.getElementById('specializationFilter').addEventListener('change', filterDoctors);
     document.getElementById('experienceFilter').addEventListener('change', filterDoctors);
+    document.getElementById('areaFilter').addEventListener('change', filterDoctors);
+    document.getElementById('zipcodeFilter').addEventListener('change', filterDoctors);
     document.querySelectorAll('.area-chip').forEach(chip => {
         chip.addEventListener('click', function () {
         const area = this.textContent;
@@ -2110,20 +2150,40 @@
     }
 
     function filterDoctors() {
-    const specialization = document.getElementById('specializationFilter').value;
-    const experience = document.getElementById('experienceFilter').value;
-    let filtered = allDoctors;
-    if (specialization) {
-        filtered = filtered.filter(doc =>
-            doc.specialization &&
-            doc.specialization.toLowerCase().includes(specialization.toLowerCase())
-        );
-    }
-    if (experience) {
-        filtered = filtered.filter(doc => parseInt(doc.experience) >= parseInt(experience));
-    }
-    displayDoctors(filtered);
-    updateMapMarkers(filtered);
+        const specialization = document.getElementById('specializationFilter').value;
+        const experience = document.getElementById('experienceFilter').value;
+        const area = document.getElementById('areaFilter').value;
+        const zipcode = document.getElementById('zipcodeFilter').value;
+
+        let filtered = allDoctors;
+
+        if (specialization) {
+            filtered = filtered.filter(doc =>
+                doc.specialization &&
+                doc.specialization.toLowerCase().includes(specialization.toLowerCase())
+            );
+        }
+
+        if (experience) {
+            filtered = filtered.filter(doc =>
+                parseInt(doc.experience) >= parseInt(experience)
+            );
+        }
+
+        if (area) {
+            filtered = filtered.filter(doc =>
+                doc.area && doc.area === area
+            );
+        }
+
+        if (zipcode) {
+            filtered = filtered.filter(doc =>
+                doc.zipcode && doc.zipcode === zipcode
+            );
+        }
+
+        displayDoctors(filtered);
+        updateMapMarkers(filtered);
     }
 
     function useCurrentLocation() {
