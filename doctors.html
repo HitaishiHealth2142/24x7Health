@@ -1768,12 +1768,16 @@
     });
     }
 
-    function populateLocationFilters() {
+    function populateLocationFilters(doctors = allDoctors) {
         const areaFilter = document.getElementById('areaFilter');
         const zipcodeFilter = document.getElementById('zipcodeFilter');
 
-        const areas = [...new Set(allDoctors.map(doc => doc.area))].sort();
-        const zipcodes = [...new Set(allDoctors.map(doc => doc.zipcode))].sort();
+        // Clear previous options
+        areaFilter.innerHTML = `<option value="">All Areas</option>`;
+        zipcodeFilter.innerHTML = `<option value="">All Zipcodes</option>`;
+
+        const areas = [...new Set(doctors.map(doc => doc.area))].sort();
+        const zipcodes = [...new Set(doctors.map(doc => doc.zipcode))].sort();
 
         areas.forEach(area => {
             if (area) {
@@ -1793,7 +1797,7 @@
             }
         });
     }
-
+        
     async function fetchDoctors() {
     const doctorsList = document.getElementById('doctorsList');
     doctorsList.innerHTML = `<div style="text-align: center; padding: 30px;"><div class="loading" style="border-top-color: var(--primary);"></div><p>Loading Doctors...</p></div>`;
@@ -2132,23 +2136,41 @@
     function setupEventListeners() {
     document.getElementById('specializationFilter').addEventListener('change', filterDoctors);
     document.getElementById('experienceFilter').addEventListener('change', filterDoctors);
-    document.getElementById('areaFilter').addEventListener('change', filterDoctors);
-    document.getElementById('zipcodeFilter').addEventListener('change', filterDoctors);
-    document.querySelectorAll('.area-chip').forEach(chip => {
-        chip.addEventListener('click', function () {
-        const area = this.textContent;
-        document.getElementById('locationSearch').value = area;
-        const geocoder = new google.maps.Geocoder();
-        geocoder.geocode({ address: area + ', Hyderabad' }, (results, status) => {
-            if (status === "OK" && results[0]) {
-            map.setCenter(results[0].geometry.location);
-            map.setZoom(14);
-            }
-        });
-        });
+    // Area change → update zipcode
+document.getElementById('areaFilter').addEventListener('change', function () {
+    const selectedArea = this.value;
+
+    let filteredDoctors = allDoctors;
+
+    if (selectedArea) {
+        filteredDoctors = allDoctors.filter(doc => doc.area === selectedArea);
+    }
+
+    populateLocationFilters(filteredDoctors);
+    document.getElementById('areaFilter').value = selectedArea;
+
+    filterDoctors(); // apply full filter
+});
+
+// Zipcode change → update area
+document.getElementById('zipcodeFilter').addEventListener('change', function () {
+    const selectedZip = this.value;
+
+    let filteredDoctors = allDoctors;
+
+    if (selectedZip) {
+        filteredDoctors = allDoctors.filter(doc => doc.zipcode === selectedZip);
+    }
+
+    populateLocationFilters(filteredDoctors);
+    document.getElementById('zipcodeFilter').value = selectedZip;
+
+    filterDoctors(); // apply full filter
+
     });
     }
 
+    
     function filterDoctors() {
         const specialization = document.getElementById('specializationFilter').value;
         const experience = document.getElementById('experienceFilter').value;
