@@ -1,6 +1,8 @@
 const express = require("express");
 const router = express.Router();
 const db = require("../db");
+const Razorpay = require('razorpay');
+
 
 // =================================================================
 // ✅ UPDATED: Appointments table schema with more details
@@ -27,6 +29,9 @@ CREATE TABLE IF NOT EXISTS appointments (
   final_amount INT DEFAULT 350,
   payment_status VARCHAR(50) DEFAULT 'Pending',
   payment_id VARCHAR(100),
+  razorpay_order_id VARCHAR(100) NULL,
+  razorpay_payment_id VARCHAR(100) NULL,
+  payment_date DATETIME NULL,
   doctor_payout_status VARCHAR(50) DEFAULT 'Pending',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (patient_id) REFERENCES patients(id),
@@ -42,9 +47,230 @@ db.query(createAppointmentsTable, (err) => {
   }
 });
 
+// Initialize Razorpay
+const razorpay = new Razorpay({
+  key_id: process.env.RAZORPAY_KEY_ID,
+  key_secret: process.env.RAZORPAY_KEY_SECRET
+});
+
+
+// =================================================================
+// CREATE RAZORPAY ORDER FOR APPOINTMENT
+// =================================================================
+router.post("/create-razorpay-order", async (req, res) => {
+  const { appointmentId, amount } = req.body;
+
+  if (!appointmentId || !amount) {
+    return res.status(400).json({
+      success: false,
+      message: "Appointment ID and amount are required"
+    });
+  }
+
+  try {
+    // Verify appointment exists and is pending
+    const checkQuery = `SELECT id, payment_status FROM appointments WHERE id = ?`;
+    
+    db.query(checkQuery, [appointmentId], async (err, results) => {
+      if (err) {
+        console.error("Error checking appointment:", err);
+        return res.status(500).json({ success: false, message: "Database error" });
+      }
+
+      if (results.length === 0) {
+        return res.status(404).json({ success: false, message: "Appointment not found" });
+      }
+
+      if (results[0].payment_status === 'Paid') {
+        return res.status(400).json({ success: false, message: "Appointment already paid" });
+      }
+
+      // Create Razorpay Order
+      const options = {
+        amount: amount * 100, // Amount in paise
+        currency: "INR",
+        receipt: `apt_${appointmentId}_${Date.now()}`,
+        payment_capture: 1
+      };
+
+      const order = await razorpay.orders.create(options);
+
+      // Store order ID in appointment record
+      const updateQuery = `UPDATE appointments SET razorpay_order_id = ? WHERE id = ?`;
+      db.query(updateQuery, [order.id, appointmentId]);
+
+      res.json({
+        success: true,
+        orderId: order.id,
+        amount: order.amount,
+        currency: order.currency,
+        keyId: process.env.RAZORPAY_KEY_ID
+      });
+    });
+  } catch (error) {
+    console.error("Razorpay order creation error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to create payment order"
+    });
+  }
+});
+
+// =================================================================
+// VERIFY RAZORPAY PAYMENT AND CONFIRM APPOINTMENT
+// =================================================================
+router.post("/verify-razorpay-payment", (req, res) => {
+  const {
+    razorpay_order_id,
+    razorpay_payment_id,
+    razorpay_signature,
+    appointmentId
+  } = req.body;
+
+  if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature || !appointmentId) {
+    return res.status(400).json({
+      success: false,
+      message: "Missing payment verification details"
+    });
+  }
+
+  // Verify signature
+  const crypto = require('crypto');
+  const body = razorpay_order_id + "|" + razorpay_payment_id;
+  const expectedSignature = crypto
+    .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
+    .update(body.toString())
+    .digest("hex");
+
+  if (expectedSignature !== razorpay_signature) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid payment signature"
+    });
+  }
+
+  // Update appointment as paid
+  const updateQuery = `
+    UPDATE appointments
+    SET payment_status = 'Paid',
+        status = 'Scheduled',
+        payment_id = ?,
+        razorpay_order_id = ?,
+        razorpay_payment_id = ?,
+        payment_date = NOW()
+    WHERE id = ? AND payment_status = 'Pending'
+  `;
+
+  db.query(updateQuery, [razorpay_payment_id, razorpay_order_id, razorpay_payment_id, appointmentId], (err, result) => {
+    if (err) {
+      console.error("Payment update failed:", err);
+      return res.status(500).json({
+        success: false,
+        message: "Payment update failed"
+      });
+    }
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Appointment not found or already paid"
+      });
+    }
+
+    // Insert wallet transaction
+    const walletQuery = `
+      INSERT INTO wallet_transactions
+      (
+        appointment_id,
+        appointment_uid,
+        doctor_uid,
+        type,
+        amount,
+        description,
+        transaction_ref,
+        admin_status,
+        processed
+      )
+      VALUES (
+        ?,
+        (SELECT appointment_uid FROM appointments WHERE id=?),
+        (SELECT doctor_uid FROM appointments WHERE id=?),
+        'CREDIT_ADMIN',
+        (SELECT final_amount FROM appointments WHERE id=?),
+        'Patient appointment payment via Razorpay',
+        ?,
+        'Pending',
+        FALSE
+      )
+    `;
+
+    db.query(walletQuery, [appointmentId, appointmentId, appointmentId, appointmentId, razorpay_payment_id], (err2) => {
+      if (err2) {
+        console.error("Wallet insert failed:", err2);
+        // Don't fail the request - payment is already successful
+      }
+
+      res.json({
+        success: true,
+        message: "Payment Successful. Appointment Confirmed.",
+        paymentId: razorpay_payment_id
+      });
+    });
+  });
+});
+
+// =================================================================
+// GET APPOINTMENT DETAILS FOR PAYMENT (UPDATED with fee structure)
+// =================================================================
+router.get("/appointment-payment-details/:appointmentId", (req, res) => {
+  const { appointmentId } = req.params;
+
+  const query = `
+    SELECT 
+      a.id,
+      a.appointment_uid,
+      a.patient_name,
+      a.doctor_name,
+      a.doctor_specialization,
+      a.appointment_date,
+      a.appointment_time,
+      a.original_fee,
+      a.discount_percent,
+      a.final_amount,
+      a.payment_status
+    FROM appointments a
+    WHERE a.id = ?
+  `;
+
+  db.query(query, [appointmentId], (err, results) => {
+    if (err) {
+      console.error("Error fetching appointment details:", err);
+      return res.status(500).json({
+        success: false,
+        message: "Database error"
+      });
+    }
+
+    if (results.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Appointment not found"
+      });
+    }
+
+    res.json({
+      success: true,
+      appointment: results[0]
+    });
+  });
+});
+
 
 // =================================================================
 // ✅ UPDATED: POST route to book an appointment with detailed info
+// =================================================================
+// =================================================================
+// UPDATED POST route to book an appointment with fee calculation
 // =================================================================
 router.post("/appointments", (req, res) => {
   const {
@@ -59,7 +285,9 @@ router.post("/appointments", (req, res) => {
     doctorMobile,
     doctorSpecialization,
     appointmentDate,
-    appointmentTime
+    appointmentTime,
+    originalFee = 500,
+    discountPercent = 30
   } = req.body;
 
   // Validation
@@ -70,12 +298,16 @@ router.post("/appointments", (req, res) => {
     });
   }
 
+  // Calculate final amount
+  const finalAmount = originalFee - (originalFee * discountPercent / 100);
+
   // Check slot conflict
   const checkQuery = `
     SELECT id FROM appointments
     WHERE doctor_id = ?
     AND appointment_date = ?
     AND appointment_time = ?
+    AND payment_status = 'Paid'
   `;
 
   db.query(checkQuery, [doctorId, appointmentDate, appointmentTime], (checkErr, checkResult) => {
@@ -94,7 +326,7 @@ router.post("/appointments", (req, res) => {
       });
     }
 
-    // Insert appointment (NO PAYMENT HERE)
+    // Insert appointment
     const insertQuery = `
     INSERT INTO appointments (
       appointment_uid,
@@ -102,13 +334,13 @@ router.post("/appointments", (req, res) => {
       doctor_id, doctor_uid, doctor_name, doctor_email,
       doctor_mobile, doctor_specialization,
       appointment_date, appointment_time,
-      status, payment_status
+      status, payment_status,
+      original_fee, discount_percent, final_amount
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
-
-    const appointmentUid = 'APT_' + Date.now();
+    const appointmentUid = 'APT_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
     const values = [
       appointmentUid,
       patientId,
@@ -124,9 +356,11 @@ router.post("/appointments", (req, res) => {
       appointmentDate,
       appointmentTime,
       "Payment Pending",
-      "Pending"  
+      "Pending",
+      originalFee,
+      discountPercent,
+      finalAmount
     ];
-
 
     db.query(insertQuery, values, (insertErr, insertResult) => {
       if (insertErr) {
@@ -142,7 +376,8 @@ router.post("/appointments", (req, res) => {
       return res.status(201).json({
         success: true,
         message: "Appointment created successfully. Awaiting payment.",
-        appointmentId: newAppointmentId
+        appointmentId: newAppointmentId,
+        finalAmount: finalAmount
       });
     });
   });

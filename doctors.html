@@ -2012,99 +2012,93 @@
     }
 
     async function submitBooking(date) {
-    const bookingMessageDiv = document.getElementById('bookingMessage');
-    bookingMessageDiv.style.display = 'none';
-    
-    const patientInfo = {
-        id: localStorage.getItem("userId"),
-        firstName: localStorage.getItem("fullName"),
-        email: localStorage.getItem("email"),
-        mobile: localStorage.getItem("mobile")
-    };
-
-    if (!localStorage.getItem("userId")) {
-        showNotification("Please login to book an appointment.", 'info');
-        setTimeout(() => window.location.href = 'login.html', 1500);
-        return;
-    }
-
-    if (!selectedSlot || !selectedDoctor) {
-        bookingMessageDiv.className = 'error';
-        bookingMessageDiv.style.display = 'block';
-        bookingMessageDiv.textContent = 'Please select a doctor and a time slot.';
-        return;
-    }
-
-    const bookingDetails = {
-        patientId: parseInt(patientInfo.id), patientName: patientInfo.firstName,
-        patientEmail: patientInfo.email, patientMobile: patientInfo.mobile,
-        doctorId: parseInt(selectedDoctor.id), doctorUid: selectedDoctor.uid,
-        doctorName: `Dr. ${selectedDoctor.first_name} ${selectedDoctor.last_name}`,
-        doctorEmail: selectedDoctor.email, doctorMobile: selectedDoctor.mobile,
-        doctorSpecialization: selectedDoctor.specialization,
-        appointmentDate: date, appointmentTime: selectedSlot
-    };
-
-    const bookBtn = document.getElementById('bookBtn');
-    bookBtn.disabled = true;
-    bookBtn.innerHTML = '<span class="loading"></span> Creating appointment...';
-    console.log("Booking payload:", bookingDetails);
-
-    try {
-        const response = await fetch('/api/appointments', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(bookingDetails)
-        });
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.message || 'Booking failed.');
-
-        const fee = selectedDoctor.consultation_fee || selectedDoctor.fee || 500;
-        const discount = Math.round(fee * 0.30);
-        const finalAmount = fee - discount;
-
-        const paymentData = {
-
-        appointmentId: data.appointmentId,
-
-        doctorUid: selectedDoctor.uid,
-
-        doctorName: `Dr ${selectedDoctor.first_name} ${selectedDoctor.last_name}`,
-
-        patientName: patientInfo.firstName,
-
-        specialization: selectedDoctor.specialization || "General Physician",
-
-        appointmentDate: date,
-
-        appointmentTime: selectedSlot,
-
-        consultationFee: fee,
-
-        discount: discount,
-
-        finalAmount: finalAmount,
-
-        flowType: "scheduled"
-
+        const bookingMessageDiv = document.getElementById('bookingMessage');
+        bookingMessageDiv.style.display = 'none';
+        
+        const patientInfo = {
+            id: localStorage.getItem("userId"),
+            firstName: localStorage.getItem("fullName"),
+            email: localStorage.getItem("email"),
+            mobile: localStorage.getItem("mobile")
         };
 
-        sessionStorage.setItem(
-        "appointmentPaymentData",
-        JSON.stringify(paymentData)
-        );
+        if (!localStorage.getItem("userId")) {
+            showNotification("Please login to book an appointment.", 'info');
+            setTimeout(() => window.location.href = 'login.html', 1500);
+            return;
+        }
 
-        window.location.href = "doctorAppointmentPayment.html";
+        if (!selectedSlot || !selectedDoctor) {
+            bookingMessageDiv.className = 'error';
+            bookingMessageDiv.style.display = 'block';
+            bookingMessageDiv.textContent = 'Please select a doctor and a time slot.';
+            return;
+        }
 
-    } catch (error) {
-        console.error('Booking Error:', error);
-        bookingMessageDiv.className = 'error';
-        bookingMessageDiv.textContent = error.message;
-        bookBtn.disabled = false;
-        bookBtn.textContent = 'Book Appointment';
+        const fee = selectedDoctor.consultation_fee || selectedDoctor.fee || 500;
+        const discountPercent = 30;
+        const finalAmount = fee - (fee * discountPercent / 100);
+
+        const bookingDetails = {
+            patientId: parseInt(patientInfo.id), 
+            patientName: patientInfo.firstName,
+            patientEmail: patientInfo.email, 
+            patientMobile: patientInfo.mobile,
+            doctorId: parseInt(selectedDoctor.id), 
+            doctorUid: selectedDoctor.uid,
+            doctorName: `Dr. ${selectedDoctor.first_name} ${selectedDoctor.last_name}`,
+            doctorEmail: selectedDoctor.email, 
+            doctorMobile: selectedDoctor.mobile,
+            doctorSpecialization: selectedDoctor.specialization,
+            appointmentDate: date, 
+            appointmentTime: selectedSlot,
+            originalFee: fee,
+            discountPercent: discountPercent
+        };
+
+        const bookBtn = document.getElementById('bookBtn');
+        bookBtn.disabled = true;
+        bookBtn.innerHTML = '<span class="loading"></span> Creating appointment...';
+
+        try {
+            const response = await fetch('/api/appointments', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(bookingDetails)
+            });
+            const data = await response.json();
+            
+            if (!response.ok) throw new Error(data.message || 'Booking failed.');
+
+            const paymentData = {
+                appointmentId: data.appointmentId,
+                doctorUid: selectedDoctor.uid,
+                doctorName: `Dr. ${selectedDoctor.first_name} ${selectedDoctor.last_name}`,
+                patientName: patientInfo.firstName,
+                patientEmail: patientInfo.email,
+                patientMobile: patientInfo.mobile,
+                specialization: selectedDoctor.specialization || "General Physician",
+                appointmentDate: date,
+                appointmentTime: selectedSlot,
+                consultationFee: fee,
+                discount: fee * discountPercent / 100,
+                finalAmount: finalAmount,
+                flowType: "scheduled"
+            };
+
+            sessionStorage.setItem("appointmentPaymentData", JSON.stringify(paymentData));
+            window.location.href = "doctorAppointmentPayment.html";
+
+        } catch (error) {
+            console.error('Booking Error:', error);
+            bookingMessageDiv.className = 'error';
+            bookingMessageDiv.textContent = error.message;
+            bookingMessageDiv.style.display = 'block';
+            bookBtn.disabled = false;
+            bookBtn.textContent = 'Book Appointment';
+        }
     }
-    }
-
+        
     function updateMapMarkers(doctors) {
     markers.forEach(marker => marker.setMap(null));
     markers = [];

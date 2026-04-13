@@ -12,7 +12,8 @@
     href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
     rel="stylesheet"
   />
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.min.js"></script>
+  <!-- Razorpay SDK -->
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 
   <style>
     * {
@@ -69,13 +70,6 @@
     h2 i {
       color: #667eea;
       font-size: 32px;
-    }
-
-    h3 {
-      color: #2d3748;
-      font-size: 18px;
-      font-weight: 600;
-      margin-bottom: 15px;
     }
 
     .details-box {
@@ -137,95 +131,13 @@
       padding-top: 15px;
     }
 
-    .payment-options {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 16px;
+    .payment-methods {
       margin: 25px 0;
     }
 
-    .option {
-      border: 2px solid #e2e8f0;
-      padding: 20px;
-      border-radius: 16px;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      font-weight: 500;
-      color: #4a5568;
-      background: white;
-    }
-
-    .option i {
-      font-size: 24px;
-      color: #667eea;
-      transition: all 0.3s ease;
-    }
-
-    .option:hover {
-      border-color: #667eea;
-      background: #f8faff;
-      transform: translateY(-2px);
-      box-shadow: 0 10px 25px rgba(102, 126, 234, 0.2);
-    }
-
-    .option.active {
-      border-color: #48bb78;
-      background: #f0fff4;
-      color: #2f855a;
-    }
-
-    .option.active i {
-      color: #48bb78;
-    }
-
-    .qr-box {
-      display: none;
-      text-align: center;
-      margin: 30px 0;
-      padding: 30px;
-      background: #f8faff;
-      border-radius: 20px;
-      border: 2px dashed #667eea;
-      animation: fadeIn 0.4s ease-out;
-    }
-
-    @keyframes fadeIn {
-      from {
-        opacity: 0;
-        transform: scale(0.95);
-      }
-      to {
-        opacity: 1;
-        transform: scale(1);
-      }
-    }
-
-    .qr-box img {
-      border-radius: 16px;
-      padding: 15px;
-      background: white;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    .payment-methods h3 {
+      color: #2d3748;
       margin-bottom: 15px;
-    }
-
-    .qr-box p {
-      color: #4a5568;
-      font-size: 16px;
-      font-weight: 500;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-    }
-
-    .qr-box p::before {
-      content: '\f02b';
-      font-family: 'Font Awesome 6 Free';
-      font-weight: 900;
-      color: #667eea;
     }
 
     .pay-btn {
@@ -255,11 +167,50 @@
       transform: translateY(0);
     }
 
+    .pay-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
     .pay-btn i {
       font-size: 20px;
     }
 
-    /* Responsive Design */
+    .loading-spinner {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top-color: white;
+      animation: spin 1s ease-in-out infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .error-message {
+      background: #fed7d7;
+      color: #c53030;
+      padding: 12px;
+      border-radius: 8px;
+      margin-top: 15px;
+      text-align: center;
+      display: none;
+    }
+
+    .success-message {
+      background: #c6f6d5;
+      color: #22543d;
+      padding: 12px;
+      border-radius: 8px;
+      margin-top: 15px;
+      text-align: center;
+      display: none;
+    }
+
     @media (max-width: 768px) {
       body {
         padding: 20px 15px;
@@ -273,53 +224,12 @@
         font-size: 24px;
       }
 
-      .payment-options {
-        grid-template-columns: 1fr;
-      }
-
       .details-box p strong {
         min-width: 100px;
       }
 
       .amount-box h3 {
         font-size: 24px;
-      }
-    }
-
-    /* Custom Scrollbar */
-    ::-webkit-scrollbar {
-      width: 10px;
-    }
-
-    ::-webkit-scrollbar-track {
-      background: #f0f0f0;
-    }
-
-    ::-webkit-scrollbar-thumb {
-      background: #667eea;
-      border-radius: 5px;
-    }
-
-    ::-webkit-scrollbar-thumb:hover {
-      background: #5a67d8;
-    }
-
-    /* Loading State for Button */
-    .pay-btn.loading {
-      opacity: 0.7;
-      cursor: not-allowed;
-    }
-
-    .pay-btn.loading i {
-      animation: spin 1s linear infinite;
-    }
-
-    @keyframes spin {
-      from {
-        transform: rotate(0deg);
-      }
-      to {
-        transform: rotate(360deg);
       }
     }
   </style>
@@ -331,138 +241,202 @@
 
     <div class="details-box" id="appointmentDetails"></div>
 
-    <h3>
-      <i class="fas fa-wallet" style="color: #667eea; margin-right: 8px;"></i>
-      Select Payment Method
-    </h3>
-
-    <div class="payment-options">
-      <div class="option" onclick="selectMethod('card')" id="card">
-        <i class="fas fa-credit-card"></i> Card Payment
-      </div>
-      <div class="option" onclick="selectMethod('upi')" id="upi">
-        <i class="fas fa-mobile-alt"></i> UPI ID
-      </div>
-      <div class="option" onclick="selectMethod('netbanking')" id="netbanking">
-        <i class="fas fa-university"></i> Net Banking
-      </div>
-      <div class="option" onclick="selectMethod('qr')" id="qr">
-        <i class="fas fa-qrcode"></i> QR Code
-      </div>
+    <div class="payment-methods">
+      <h3><i class="fas fa-shield-alt"></i> Secure Payment via Razorpay</h3>
+      <p style="color: #718096; margin-bottom: 20px;">
+        <i class="fas fa-lock"></i> Your payment is secure and encrypted
+      </p>
     </div>
 
-    <div class="qr-box" id="qrBox">
-      <img
-        src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi://pay?pa=demo@upi"
-        alt="QR Code"
-      />
-      <p>Scan with any UPI app</p>
-    </div>
-
-    <button class="pay-btn" onclick="makePayment()">
-      <i class="fas fa-lock"></i> Pay & Confirm Appointment
+    <button class="pay-btn" onclick="makePayment()" id="payBtn">
+      <i class="fas fa-rupee-sign"></i> Pay Now
     </button>
+
+    <div class="error-message" id="errorMessage"></div>
+    <div class="success-message" id="successMessage"></div>
   </div>
 
   <script>
-    const socket = io("https://24x7health.in", {
-      transports: ["websocket", "polling"],
-    });
-
-    let selectedMethod = null;
     let appointmentData = null;
+    let appointmentId = null;
 
-    document.addEventListener("DOMContentLoaded", function () {
-      const data =
-        sessionStorage.getItem("appointmentPaymentData") ||
-        sessionStorage.getItem("pendingAppointment");
+    document.addEventListener("DOMContentLoaded", async function () {
+      const data = sessionStorage.getItem("appointmentPaymentData");
 
       if (!data) {
-        alert("No appointment found.");
-        window.location.href = "doctors.html";
+        showError("No appointment found. Please book an appointment first.");
+        setTimeout(() => {
+          window.location.href = "doctors.html";
+        }, 2000);
         return;
       }
 
       appointmentData = JSON.parse(data);
+      appointmentId = appointmentData.appointmentId;
 
-      document.getElementById("appointmentDetails").innerHTML = `
-        <h3>${appointmentData.doctorName || ""}</h3>
-        <p><strong>Specialization:</strong> ${
-          appointmentData.specialization || "General Physician"
-        }</p>
-        <p><strong>Date:</strong> ${appointmentData.appointmentDate}</p>
-        <p><strong>Time:</strong> ${appointmentData.appointmentTime}</p>
-        <div class="amount-box">
-          <p>Consultation Fee: ₹${
-            appointmentData.consultationFee || 0
-          }</p>
-          <p>Discount: -₹${appointmentData.discount || 0}</p>
-          <h3>Final Amount: ₹${
-            appointmentData.finalAmount || 0
-          }</h3>
-        </div>
-      `;
+      // Fetch fresh appointment details from server
+      await fetchAppointmentDetails();
+
+      displayAppointmentDetails();
     });
 
-    function selectMethod(method) {
-      selectedMethod = method;
+    async function fetchAppointmentDetails() {
+      try {
+        const response = await fetch(`/api/appointment-payment-details/${appointmentId}`);
+        const result = await response.json();
 
-      document.querySelectorAll(".option").forEach((o) =>
-        o.classList.remove("active")
-      );
-
-      document.getElementById(method).classList.add("active");
-
-      if (method === "qr") {
-        document.getElementById("qrBox").style.display = "block";
-      } else {
-        document.getElementById("qrBox").style.display = "none";
+        if (result.success) {
+          appointmentData = {
+            ...appointmentData,
+            ...result.appointment
+          };
+        }
+      } catch (error) {
+        console.error("Error fetching appointment details:", error);
       }
     }
 
-    // Simulate payment process
+    function displayAppointmentDetails() {
+      const finalAmount = appointmentData.finalAmount || appointmentData.final_amount || 350;
+      const originalFee = appointmentData.consultationFee || appointmentData.original_fee || 500;
+      const discount = appointmentData.discount || (originalFee - finalAmount);
+
+      document.getElementById("appointmentDetails").innerHTML = `
+        <h3>Dr. ${appointmentData.doctorName || appointmentData.doctor_name || ""}</h3>
+        <p><strong>Specialization:</strong> ${appointmentData.specialization || appointmentData.doctor_specialization || "General Physician"}</p>
+        <p><strong>Date:</strong> ${appointmentData.appointmentDate || appointmentData.appointment_date}</p>
+        <p><strong>Time:</strong> ${appointmentData.appointmentTime || appointmentData.appointment_time}</p>
+        <p><strong>Patient Name:</strong> ${appointmentData.patientName || appointmentData.patient_name}</p>
+        <div class="amount-box">
+          <p>Consultation Fee: ₹${originalFee}</p>
+          <p>Discount (30%): -₹${discount}</p>
+          <h3>Final Amount: ₹${finalAmount}</h3>
+        </div>
+      `;
+    }
+
     async function makePayment() {
-      if (!selectedMethod) {
-        alert("Please select payment method.");
-        return;
-      }
+      const payBtn = document.getElementById('payBtn');
+      const finalAmount = appointmentData.finalAmount || appointmentData.final_amount || 350;
+
+      // Disable button and show loading
+      payBtn.disabled = true;
+      payBtn.innerHTML = '<span class="loading-spinner"></span> Creating Order...';
 
       try {
-        const response = await fetch("/api/payment/simulate", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
+        // 1. Create Razorpay Order
+        const orderResponse = await fetch('/api/create-razorpay-order', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            appointmentId: appointmentData.appointmentId,
-            method: selectedMethod,
-          }),
+            appointmentId: appointmentId,
+            amount: finalAmount
+          })
         });
 
-        const result = await response.json();
+        const orderData = await orderResponse.json();
 
-        if (!result.success) {
-          alert("Payment failed");
-          return;
+        if (!orderData.success) {
+          throw new Error(orderData.message || 'Failed to create payment order');
         }
 
-        alert("Payment Successful");
+        // 2. Configure Razorpay Options
+        const options = {
+          key: orderData.keyId,
+          amount: orderData.amount,
+          currency: orderData.currency,
+          name: "24x7 Health Services",
+          description: `Appointment with Dr. ${appointmentData.doctorName || appointmentData.doctor_name}`,
+          order_id: orderData.orderId,
+          handler: function (response) {
+            verifyPayment(response);
+          },
+          prefill: {
+            name: appointmentData.patientName || appointmentData.patient_name,
+            email: appointmentData.patientEmail,
+            contact: appointmentData.patientMobile
+          },
+          theme: {
+            color: "#667eea"
+          },
+          modal: {
+            ondismiss: function() {
+              payBtn.disabled = false;
+              payBtn.innerHTML = '<i class="fas fa-rupee-sign"></i> Pay Now';
+            }
+          }
+        };
 
-        appointmentData = JSON.parse(
-          sessionStorage.getItem("appointmentPaymentData")
-        );
+        // 3. Open Razorpay Checkout
+        const razorpay = new Razorpay(options);
+        razorpay.open();
 
-        if (appointmentData.flowType === "instant") {
-          const roomId = "apt_" + appointmentData.appointmentId;
-
-          sessionStorage.setItem("roomId", roomId);
-
-          window.location.href =
-            `meet.html?roomId=${roomId}&doctorUid=${appointmentData.doctorUid}`;
-        } else {
-          window.location.href = "patientProfile.html";
-        }
-      } catch (err) {
-        console.error("Payment error:", err);
+      } catch (error) {
+        console.error("Payment error:", error);
+        showError(error.message || "Failed to initiate payment. Please try again.");
+        payBtn.disabled = false;
+        payBtn.innerHTML = '<i class="fas fa-rupee-sign"></i> Pay Now';
       }
+    }
+
+    async function verifyPayment(paymentResponse) {
+      const payBtn = document.getElementById('payBtn');
+      payBtn.innerHTML = '<span class="loading-spinner"></span> Verifying Payment...';
+
+      try {
+        const verifyResponse = await fetch('/api/verify-razorpay-payment', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            razorpay_order_id: paymentResponse.razorpay_order_id,
+            razorpay_payment_id: paymentResponse.razorpay_payment_id,
+            razorpay_signature: paymentResponse.razorpay_signature,
+            appointmentId: appointmentId
+          })
+        });
+
+        const result = await verifyResponse.json();
+
+        if (result.success) {
+          showSuccess("Payment Successful! Appointment Confirmed.");
+          
+          // Clear session storage
+          sessionStorage.removeItem("appointmentPaymentData");
+          
+          // Redirect based on flow type
+          setTimeout(() => {
+            if (appointmentData.flowType === "instant") {
+              const roomId = "apt_" + appointmentId;
+              window.location.href = `meet.html?roomId=${roomId}&doctorUid=${appointmentData.doctorUid}`;
+            } else {
+              window.location.href = "patientProfile.html";
+            }
+          }, 2000);
+        } else {
+          throw new Error(result.message || "Payment verification failed");
+        }
+      } catch (error) {
+        console.error("Verification error:", error);
+        showError(error.message || "Payment verification failed. Please contact support.");
+        payBtn.disabled = false;
+        payBtn.innerHTML = '<i class="fas fa-rupee-sign"></i> Pay Now';
+      }
+    }
+
+    function showError(message) {
+      const errorDiv = document.getElementById('errorMessage');
+      errorDiv.textContent = message;
+      errorDiv.style.display = 'block';
+      
+      setTimeout(() => {
+        errorDiv.style.display = 'none';
+      }, 5000);
+    }
+
+    function showSuccess(message) {
+      const successDiv = document.getElementById('successMessage');
+      successDiv.textContent = message;
+      successDiv.style.display = 'block';
     }
   </script>
 </body>
