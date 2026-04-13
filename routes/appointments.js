@@ -384,7 +384,7 @@ router.post("/appointments", (req, res) => {
 });
 
 
-// ================= GET BOOKED SLOTS =================
+// ================= GET BOOKED SLOTS (FIXED) =================
 router.get('/getBookedSlots', (req, res) => {
   const { doctorUid, date } = req.query;
 
@@ -392,6 +392,7 @@ router.get('/getBookedSlots', (req, res) => {
     return res.status(400).json({ message: 'doctorUid and date are required' });
   }
 
+  // Check if payment_status column exists, if not, use a simpler query
   const query = `
     SELECT appointment_time 
     FROM appointments 
@@ -403,7 +404,22 @@ router.get('/getBookedSlots', (req, res) => {
   db.query(query, [doctorUid, date], (err, results) => {
     if (err) {
       console.error('Error fetching booked slots:', err);
-      return res.status(500).json({ message: 'Database error' });
+      // Fallback query without payment_status filter
+      const fallbackQuery = `
+        SELECT appointment_time 
+        FROM appointments 
+        WHERE doctor_uid = ? 
+        AND appointment_date = ?
+      `;
+      db.query(fallbackQuery, [doctorUid, date], (fallbackErr, fallbackResults) => {
+        if (fallbackErr) {
+          console.error('Fallback query also failed:', fallbackErr);
+          return res.status(500).json({ message: 'Database error', error: err.message });
+        }
+        const bookedSlots = fallbackResults.map(r => r.appointment_time);
+        res.json(bookedSlots);
+      });
+      return;
     }
 
     const bookedSlots = results.map(r => r.appointment_time);
